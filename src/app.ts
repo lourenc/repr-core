@@ -14,6 +14,7 @@ import {
 import { QUESTIONS_LIST, nextUnansweredQuestion } from './profile';
 // import { attemptAnswer } from './ai';
 import { fetchNewProposals } from './proposals';
+import { doesSpaceExist } from './spaces';
 
 export async function bootstrapApp() {
   const bot = new Telegraf(TG_BOT_TOKEN);
@@ -99,10 +100,6 @@ export async function bootstrapApp() {
   });
 
   await bot.launch();
-}
-
-async function doesSpaceExist(_: string) {
-  return true;
 }
 
 async function askNextProfileQuestion(ctx: Context, state: ChatState) {
