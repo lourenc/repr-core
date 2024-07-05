@@ -1,3 +1,5 @@
+// import QUESTIONS_LIST from './questions.json';
+
 export type Question = string;
 export type Answer = string;
 export type Profile = Record<Question, Answer>;
@@ -20,3 +22,5 @@ export function nextUnansweredQuestion(profile: Profile) {
 
   return unansweredQuestion as keyof typeof QUESTIONS_LIST | undefined;
 }
+
+// export { QUESTIONS_LIST };

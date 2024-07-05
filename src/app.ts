@@ -123,7 +123,7 @@ async function askNextProfileQuestion(ctx: Context, state: ChatState) {
     Markup.keyboard(
       QUESTIONS_LIST[question].map((answer) => ({ text: answer })),
       {
-        columns: 2,
+        columns: 3,
       }
     )
       .oneTime(true)
