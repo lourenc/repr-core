@@ -1,8 +1,8 @@
-import { Telegraf, Markup, Context } from 'telegraf';
+import { Context, Markup, Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 
 import { TG_BOT_TOKEN } from './config';
-import { WELCOME_MESSAGE } from './constants';
+import { PROFILE_SETUP_COMPLETE_MESSAGE, WELCOME_MESSAGE } from './constants';
 
 import {
   ChatState,
@@ -10,9 +10,9 @@ import {
   createInitialChatState,
   getPersistedState,
   persistState,
-} from './data';
+} from './state';
 import { QUESTIONS_LIST, nextUnansweredQuestion } from './profile';
-import { attemptAnswer } from './ai';
+// import { attemptAnswer } from './ai';
 import { fetchNewProposals } from './proposals';
 
 export async function bootstrapApp() {
@@ -28,7 +28,6 @@ export async function bootstrapApp() {
 
   bot.command('profile', async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
-
     state.profile = {};
     state.stage = STAGES.PROFILE_SETUP;
 
@@ -37,25 +36,22 @@ export async function bootstrapApp() {
     return askNextProfileQuestion(ctx, state);
   });
 
-  bot.command('vote', async (ctx) => {
+  bot.command('space', async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
+    state.stage = STAGES.SPACE_SETUP;
 
-    // if (state.stage != STAGES.AWAITING_PROPOSALS) {
-    const systemPrompt = 'You are French translator. If it is the question, do not reply. Just provide the translation of the question to French'
+    await persistState(ctx.chat.id, state);
 
-    const answer = await attemptAnswer(systemPrompt, "What is the meaning of life?", ["42", "Something else"])
-      // return attemptAnswer()
-    // }
-    return ctx.reply(answer);
+    return ctx.reply('Please, provide the space ID:');
   });
 
   bot.command('proposals', async (ctx) => {
-    ctx.reply("Awaiting proposals");
+    ctx.reply('Awaiting proposals');
     const proposals = await fetchNewProposals();
     for (const proposal of proposals) {
       ctx.reply(proposal, { parse_mode: 'MarkdownV2' });
     }
-    return
+    return;
   });
 
   bot.on(message('text'), async (ctx) => {
@@ -63,33 +59,50 @@ export async function bootstrapApp() {
 
     switch (state.stage) {
       case STAGES.PROFILE_SETUP: {
-        const question = nextUnansweredQuestion(state.profile);
-        if (!question) {
-          ctx.reply('Your profile is already setup!');
+        const unansweredQuestion = nextUnansweredQuestion(state.profile);
+        if (!unansweredQuestion) {
+          ctx.reply(PROFILE_SETUP_COMPLETE_MESSAGE);
 
-          return persistState(ctx.chat.id, {
-            ...state,
-            stage: STAGES.AWAITING_PROPOSALS,
-          });
+          state.stage = STAGES.PROFILE_SETUP_FINISHED;
+          return persistState(ctx.chat.id, state);
         }
 
-        if (!QUESTIONS_LIST[question].includes(ctx.message.text)) {
+        const expectedAnswers = QUESTIONS_LIST[unansweredQuestion];
+        if (!expectedAnswers.includes(ctx.message.text)) {
           return ctx.reply(
-            `Please select one of the following options: ${QUESTIONS_LIST[
-              question
-            ].join(', ')}`
+            `Please select one of the following options: ${expectedAnswers.join(
+              ', '
+            )}`
           );
         }
 
-        state.profile[question] = ctx.message.text;
+        state.profile[unansweredQuestion] = ctx.message.text;
 
         await persistState(ctx.chat.id, state);
         return askNextProfileQuestion(ctx, state);
+      }
+      case STAGES.SPACE_SETUP: {
+        const spaceId = ctx.message.text;
+        const exists = await doesSpaceExist(spaceId);
+
+        if (!exists) {
+          return ctx.reply('This space does not exist. Please try again');
+        } else {
+          state.spaceId = spaceId;
+          state.stage = STAGES.SPACE_SETUP_FINISHED;
+
+          await persistState(ctx.chat.id, state);
+          return ctx.reply('Hooray! Space setup is complete');
+        }
       }
     }
   });
 
   await bot.launch();
+}
+
+async function doesSpaceExist(_: string) {
+  return true;
 }
 
 async function askNextProfileQuestion(ctx: Context, state: ChatState) {
@@ -102,7 +115,7 @@ async function askNextProfileQuestion(ctx: Context, state: ChatState) {
       });
     }
 
-    return ctx.reply('Your profile is already setup!');
+    return ctx.reply(PROFILE_SETUP_COMPLETE_MESSAGE);
   }
 
   return ctx.reply(
