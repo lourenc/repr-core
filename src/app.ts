@@ -4,7 +4,6 @@ import { message } from 'telegraf/filters';
 import { TG_BOT_TOKEN } from './config';
 import {
   PROFILE_SETUP_COMPLETE_MESSAGE,
-  PROPOSAL_INTRO,
   PROPOSAL_SYSTEM_PROMPT,
   WELCOME_MESSAGE,
 } from './constants';
@@ -18,8 +17,13 @@ import {
 } from './state';
 import { QUESTIONS_LIST, nextUnansweredQuestion } from './profile';
 import { attemptAnswer } from './ai';
-import { Proposal, fetchNewProposals, getProposalURL } from './proposals';
 import { doesSpaceExist } from './spaces';
+import { escapeSpecialCharacters } from './helpers';
+import {
+  fetchNewProposals,
+  getProposalURL,
+  prepareProposalPrompt,
+} from './proposals';
 
 export async function bootstrapApp() {
   const bot = new Telegraf(TG_BOT_TOKEN);
@@ -60,12 +64,16 @@ export async function bootstrapApp() {
     const systemPrompt = generateProfileSystemPrompt(state);
 
     ctx.reply('Awaiting proposals');
+
     const proposals = await fetchNewProposals();
+
     for (const proposal of proposals) {
-      let proposalSummary = `*Proposal:* ${proposal.title}\n`;
       const url = getProposalURL(proposal, state.spaceId);
-      proposalSummary = escapeSpecialCharacters(proposalSummary);
-      proposalSummary += `[Read more](${url})`;
+
+      const proposalSummary = `*Proposal:* ${escapeSpecialCharacters(
+        proposal.title
+      )}\n[Read more](${url})`;
+
       ctx.reply(proposalSummary, { parse_mode: 'MarkdownV2' });
     }
 
@@ -123,16 +131,6 @@ export async function bootstrapApp() {
   await bot.launch();
 }
 
-function prepareProposalPrompt(proposal: Proposal) {
-  let proposalBody = PROPOSAL_INTRO;
-
-  proposalBody += `Title: ${proposal.title}\n`;
-  proposalBody += `Proposal: ${proposal.body}\n`;
-  proposalBody += `Answer choices: ${proposal.choices.join('; ')}`;
-
-  return escapeSpecialCharacters(proposalBody);
-}
-
 function generateProfileSystemPrompt(state: ChatState) {
   let systemPrompt = PROPOSAL_SYSTEM_PROMPT;
   for (const [que, ans] of Object.entries(state.profile)) {
@@ -140,15 +138,6 @@ function generateProfileSystemPrompt(state: ChatState) {
   }
 
   return systemPrompt;
-}
-
-function escapeSpecialCharacters(proposalText: string) {
-  proposalText = proposalText.replace(/-/g, '\\-');
-  proposalText = proposalText.replace(/\(/g, '\\(');
-  proposalText = proposalText.replace(/\)/g, '\\)');
-  proposalText = proposalText.replace(/\./g, '\\.');
-  proposalText = proposalText.replace(/\#/g, '\\#');
-  return proposalText;
 }
 
 async function askNextProfileQuestion(ctx: Context, state: ChatState) {
