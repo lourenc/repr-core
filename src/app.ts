@@ -2,7 +2,7 @@ import { Context, Markup, Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 
 import { TG_BOT_TOKEN } from './config';
-import { PROFILE_SETUP_COMPLETE_MESSAGE, WELCOME_MESSAGE } from './constants';
+import { PROFILE_SETUP_COMPLETE_MESSAGE, PROPOSAL_INTRO, PROPOSAL_SYSTEM_PROMPT, WELCOME_MESSAGE } from './constants';
 
 import {
   ChatState,
@@ -12,8 +12,8 @@ import {
   persistState,
 } from './state';
 import { QUESTIONS_LIST, nextUnansweredQuestion } from './profile';
-// import { attemptAnswer } from './ai';
-import { fetchNewProposals } from './proposals';
+import { attemptAnswer } from './ai';
+import { Proposal, fetchNewProposals } from './proposals';
 import { doesSpaceExist } from './spaces';
 
 export async function bootstrapApp() {
@@ -50,9 +50,30 @@ export async function bootstrapApp() {
     ctx.reply('Awaiting proposals');
     const proposals = await fetchNewProposals();
     for (const proposal of proposals) {
-      ctx.reply(proposal, { parse_mode: 'MarkdownV2' });
+      let proposalText = (`*Proposal:* ${proposal.title}\n${proposal.body}\n*Answer choices:* ${proposal.choices.join(', ')}`)
+      proposalText = escapeSpecialCharacters(proposalText);
+      ctx.reply(proposalText, { parse_mode: 'MarkdownV2' });
     }
-    return;
+
+    const state = await getPersistedState(ctx.chat.id);
+    
+    const systemPrompt = generateProfileSystemPrompt(state);
+
+    for (const proposal of proposals) {
+      let proposalPrompt = prepareProposalPrompt(proposal);
+      
+      ctx.reply("*Asking AI the following:*\n" + proposalPrompt, { parse_mode: 'MarkdownV2' }); //DBG
+
+      const response = await attemptAnswer(systemPrompt, proposalPrompt)
+      
+      ctx.reply(response)
+
+      const answer = response.split("\n").pop().trim();
+      ctx.reply("*Final answer:* " + answer, { parse_mode: 'MarkdownV2' });
+    }
+
+
+    return
   });
 
   bot.on(message('text'), async (ctx) => {
@@ -100,6 +121,36 @@ export async function bootstrapApp() {
   });
 
   await bot.launch();
+}
+
+function prepareProposalPrompt(proposal: Proposal) {
+  let proposalBody = PROPOSAL_INTRO;
+
+  proposalBody += "Title: " + proposal.title + "\n";
+
+  proposalBody += "Proposal: " + proposal.body + "\n";
+
+  // let choice = "x";
+  proposalBody += `\nAnswer choices: ${proposal.choices.join('; ')}`;
+
+  proposalBody = escapeSpecialCharacters(proposalBody);
+  return proposalBody;
+}
+
+function generateProfileSystemPrompt(state: ChatState) {
+  let systemPrompt = PROPOSAL_SYSTEM_PROMPT;
+  for (const [que, ans] of Object.entries(state.profile)) {
+    systemPrompt += `${que}: ${ans}\n`;
+  }
+  return systemPrompt;
+}
+
+function escapeSpecialCharacters(proposalText: string) {
+  proposalText = proposalText.replace(/-/g, "\\-");
+  proposalText = proposalText.replace(/\(/g, "\\(");
+  proposalText = proposalText.replace(/\)/g, "\\)");
+  proposalText = proposalText.replace(/\./g, "\\.");
+  return proposalText;
 }
 
 async function askNextProfileQuestion(ctx: Context, state: ChatState) {

@@ -3,6 +3,16 @@ import { SNAPSHOT_GRAPHQL_URL } from './config'
 const spaces: string[] = [ "repr.eth" ]
 const handledProposals: string[] = []
 
+export interface Proposal {
+    id: string
+    title: string
+    body: string
+    choices: string[]
+    start: number
+    end: number
+    snapshot: string
+}
+
 const fetchNewProposalsQuery = 
     `query Proposals($amount: Int!, $spaces: [String]!){
         proposals (
@@ -39,7 +49,7 @@ export async function fetchNewProposals() {
             query: fetchNewProposalsQuery,
             variables: {
                 spaces: spaces,
-                amount: 3
+                amount: 1
             },
         })
     });
@@ -48,19 +58,5 @@ export async function fetchNewProposals() {
 
     const proposals = responseJson.data.proposals
 
-    const proposalTexts: string[] = []
-
-    for (const proposal of proposals) {
-        if (proposal in handledProposals) {
-            continue
-        }
-        const ok = await handle_proposal()
-        if (ok) {
-            handledProposals.push(proposal)
-        }
-
-        proposalTexts.push(`*Proposal:* ${proposal.title}\n${proposal.body}\n*Answer choices:* ${proposal.choices.join(', ')}`)
-    }
-
-    return proposalTexts
+    return proposals as Proposal[]
 }
