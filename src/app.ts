@@ -13,6 +13,7 @@ import {
 } from './state';
 import { QUESTIONS_LIST, nextUnansweredQuestion } from './profile';
 // import { attemptAnswer } from './ai';
+import { fetchNewProposals } from './proposals';
 
 export async function bootstrapApp() {
   const bot = new Telegraf(TG_BOT_TOKEN);
@@ -42,6 +43,15 @@ export async function bootstrapApp() {
     await persistState(ctx.chat.id, state);
 
     return ctx.reply('Please, provide the space ID:');
+  });
+
+  bot.command('proposals', async (ctx) => {
+    ctx.reply('Awaiting proposals');
+    const proposals = await fetchNewProposals();
+    for (const proposal of proposals) {
+      ctx.reply(proposal, { parse_mode: 'MarkdownV2' });
+    }
+    return;
   });
 
   bot.on(message('text'), async (ctx) => {
