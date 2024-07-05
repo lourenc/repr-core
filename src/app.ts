@@ -12,6 +12,7 @@ import {
   persistState,
 } from './data';
 import { QUESTIONS_LIST, nextUnansweredQuestion } from './profile';
+import { attemptAnswer } from './ai';
 
 export async function bootstrapApp() {
   const bot = new Telegraf(TG_BOT_TOKEN);
@@ -35,6 +36,18 @@ export async function bootstrapApp() {
     return askNextProfileQuestion(ctx, state);
   });
 
+  bot.command('vote', async (ctx) => {
+    const state = await getPersistedState(ctx.chat.id);
+
+    // if (state.stage != STAGES.AWAITING_PROPOSALS) {
+    const systemPrompt = 'You are French translator. If it is the question, do not reply. Just provide the translation of the question to French'
+
+    const answer = await attemptAnswer(systemPrompt, "What is the meaning of life?", ["42", "Something else"])
+      // return attemptAnswer()
+    // }
+    return ctx.reply(answer);
+  });
+
   bot.on(message('text'), async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
 
@@ -46,7 +59,7 @@ export async function bootstrapApp() {
 
           return persistState(ctx.chat.id, {
             ...state,
-            stage: STAGES.WELCOME,
+            stage: STAGES.AWAITING_PROPOSALS,
           });
         }
 
@@ -75,7 +88,7 @@ async function askNextProfileQuestion(ctx: Context, state: ChatState) {
     if (ctx.chat?.id) {
       await persistState(ctx.chat.id, {
         ...state,
-        stage: STAGES.WELCOME,
+        stage: STAGES.AWAITING_PROPOSALS,
       });
     }
 

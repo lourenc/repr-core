@@ -5,6 +5,7 @@ export const STAGES = {
   WELCOME: 'WELCOME',
   PROFILE_SETUP: 'PROFILE_SETUP',
   VOTING_SETUP: 'VOTING_SETUP',
+  AWAITING_PROPOSALS: 'AWAITING_PROPOSALS',
 } as const;
 
 export type ChatState = {
