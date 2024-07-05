@@ -1,8 +1,7 @@
+import { SNAPSHOT_GRAPHQL_URL } from './config'
 
 const spaces: string[] = [ "repr.eth" ]
 const handledProposals: string[] = []
-
-const SNAPSHOT_GRAPHQL_URL = 'https://testnet.hub.snapshot.org/graphql'
 
 const fetchNewProposalsQuery = 
     `query Proposals($amount: Int!, $spaces: [String]!){
