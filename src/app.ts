@@ -2,7 +2,7 @@ import { Context, Markup, Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 
 import { TG_BOT_TOKEN } from './config';
-import { PROFILE_SETUP_COMPLETE_MESSAGE, PROPOSAL_INTRO, PROPOSAL_SYSTEM_PROMPT, WELCOME_MESSAGE } from './constants';
+import { ANSWER_CHOICES, PROFILE_SETUP_COMPLETE_MESSAGE, PROPOSAL_INTRO, PROPOSAL_SYSTEM_PROMPT, SUMMARIZE_PERSONALITY, WELCOME_MESSAGE } from './constants';
 
 import {
   ChatState,
@@ -46,6 +46,27 @@ export async function bootstrapApp() {
     return ctx.reply('Please, provide the space ID:');
   });
 
+  bot.command('sumup', async (ctx) => {
+    ctx.reply("Summarizing personality");
+    const state = await getPersistedState(ctx.chat.id);
+    const qa = formQaList(state);
+
+    const response = await attemptAnswer(SUMMARIZE_PERSONALITY, qa)
+      
+    return ctx.reply(response);
+  });
+
+  bot.command('info', async (ctx) => {
+    const state = await getPersistedState(ctx.chat.id);
+    const qa = formQaList(state);
+    ctx.reply(qa)
+
+    ctx.reply(state.spaceId ? `Currently connected space: ${state.spaceId}` : "No space ID set")
+      
+    return;
+  });
+
+
   bot.command('proposals', async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
     if (!state.spaceId) {
@@ -54,7 +75,7 @@ export async function bootstrapApp() {
 
     const systemPrompt = generateProfileSystemPrompt(state);
 
-    ctx.reply('Awaiting proposals');
+    ctx.reply('Fetchin unhandled proposals');
     const proposals = await fetchNewProposals();
     for (const proposal of proposals) {
       let proposalSummary = `*Proposal:* ${proposal.title}\n`;
@@ -62,13 +83,9 @@ export async function bootstrapApp() {
       proposalSummary = escapeSpecialCharacters(proposalSummary);
       proposalSummary += `[Read more](${url})`;
       ctx.reply(proposalSummary, { parse_mode: 'MarkdownV2' });
-    }
-    
-    const systemPrompt = generateProfileSystemPrompt(state);
 
-    for (const proposal of proposals) {
       let proposalPrompt = prepareProposalPrompt(proposal);
-
+      
       const response = await attemptAnswer(systemPrompt, proposalPrompt)
       
       ctx.reply(response)
@@ -132,21 +149,26 @@ function prepareProposalPrompt(proposal: Proposal) {
 
   proposalBody += "Title: " + proposal.title + "\n";
 
-  proposalBody += "Proposal: " + proposal.body + "\n";
+  proposalBody += proposal.body + "\n";
 
-  // let choice = "x";
-  proposalBody += `\nAnswer choices: ${proposal.choices.join('; ')}`;
+  proposalBody += `\n${ANSWER_CHOICES}\n${proposal.choices.join('\n')}`;
 
   proposalBody = escapeSpecialCharacters(proposalBody);
   return proposalBody;
 }
 
-function generateProfileSystemPrompt(state: ChatState) {
-  let systemPrompt = PROPOSAL_SYSTEM_PROMPT;
+function formQaList(state: ChatState) {
+  let qaList = "";
   for (const [que, ans] of Object.entries(state.profile)) {
-    systemPrompt += `${que} ${ans}\n`;
+    qaList += `${que} ${ans}\n`;
   }
-  return systemPrompt;
+  return qaList;
+}
+
+function generateProfileSystemPrompt(state: ChatState) {
+  const systemPrompt = PROPOSAL_SYSTEM_PROMPT;
+  const qaList = formQaList(state);
+  return systemPrompt + qaList;
 }
 
 function escapeSpecialCharacters(proposalText: string) {

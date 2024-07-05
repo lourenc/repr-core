@@ -23,6 +23,21 @@ Further steps is to setup your profile. Please type /profile to get started.`;
 export const PROFILE_SETUP_COMPLETE_MESSAGE =
   'Your profile is already setup ✨ You can now indicate DAO Snapshot space name by sending /space command';
 
-export const PROPOSAL_SYSTEM_PROMPT = "You are my digital twin. Here are the answers to the questions defining my values:\n";
+export const PROPOSAL_SYSTEM_PROMPT = `As a digital twin of the user your goal is to study user's profile provided below and make a decision that the user with such profile would likely have made.
 
-export const PROPOSAL_INTRO = "Please consider the following proposal and provide your answer by selecting one of the choices. Also provide your motivation. Write the final answer on the last line\n"
+Avoid any commentary outside the provided prompt structure, even titles. Provide only your output. Structure your answer the following way:
+ 1. Rationalization of picked answer as a list of bullet points written from first person perspective.
+ 2. Suggested answer out of list of possible answers.
+
+Write the final choice on the last line, the last line should only include preferred choice and nothing else.
+
+Be conservative and brief in rationalization and only mention points that really apply to the question. Less is more.
+
+User profile:
+`;
+
+export const PROPOSAL_INTRO = "Proposal:\n"
+
+export const ANSWER_CHOICES = "Answer choices:"
+
+export const SUMMARIZE_PERSONALITY = "Summarize the user's personality, based on questions and their answers:"
