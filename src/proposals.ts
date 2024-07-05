@@ -5,12 +5,12 @@ const handledProposals: string[] = []
 const SNAPSHOT_GRAPHQL_URL = 'https://testnet.hub.snapshot.org/graphql'
 
 const fetchNewProposalsQuery = 
-    `query {
+    `query Proposals($amount: Int!, $spaces: [String]!){
         proposals (
-            first: 3,
+            first: $amount,
             skip: 0,
             where: {
-                space_in: ${JSON.stringify(spaces)},
+                space_in: $spaces,
                 state: "started"
             },
             orderBy: "created",
@@ -38,7 +38,10 @@ export async function fetchNewProposals() {
         },
         body: JSON.stringify({
             query: fetchNewProposalsQuery,
-            variables: {},
+            variables: {
+                spaces: spaces,
+                amount: 3
+            },
         })
     });
     // const response = await fetch(SNAPSHOT_GRAPHQL_URL, fetchNewProposalsQuery)
