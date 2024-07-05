@@ -1,4 +1,4 @@
-import { bootstrapApp } from "./app";
+import { bootstrapApp } from './app';
 
 async function main() {
   await bootstrapApp();
