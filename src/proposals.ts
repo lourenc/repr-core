@@ -43,8 +43,7 @@ export async function fetchNewProposals() {
             },
         })
     });
-    // const response = await fetch(SNAPSHOT_GRAPHQL_URL, fetchNewProposalsQuery)
-    // console.log(await response.text())
+
     const responseJson = await response.json()
 
     const proposals = responseJson.data.proposals
