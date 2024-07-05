@@ -2,7 +2,14 @@ import { Context, Markup, Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 
 import { TG_BOT_TOKEN } from './config';
-import { ANSWER_CHOICES, PROFILE_SETUP_COMPLETE_MESSAGE, PROPOSAL_INTRO, PROPOSAL_SYSTEM_PROMPT, SUMMARIZE_PERSONALITY, WELCOME_MESSAGE } from './constants';
+import {
+  PROFILE_SETUP_COMPLETE_MESSAGE,
+  PROPOSAL_INTRO,
+  PROPOSAL_SYSTEM_PROMPT,
+  WELCOME_MESSAGE,
+  SUMMARIZE_PERSONALITY,
+  ANSWER_CHOICES
+} from './constants';
 
 import {
   ChatState,
@@ -85,16 +92,15 @@ export async function bootstrapApp() {
       ctx.reply(proposalSummary, { parse_mode: 'MarkdownV2' });
 
       let proposalPrompt = prepareProposalPrompt(proposal);
-      
-      const response = await attemptAnswer(systemPrompt, proposalPrompt)
-      
-      ctx.reply(response)
 
-      const answer = response.split("\n").pop().trim();
-      ctx.reply("*Extracted answer:* " + answer, { parse_mode: 'MarkdownV2' });
+      const response = await attemptAnswer(systemPrompt, proposalPrompt);
+      ctx.reply(response);
+
+      const answer = (response.split('\n').pop() as string).trim();
+      ctx.reply('*Extracted answer:* ' + answer, { parse_mode: 'MarkdownV2' });
     }
 
-    return
+    return;
   });
 
   bot.on(message('text'), async (ctx) => {
@@ -102,14 +108,7 @@ export async function bootstrapApp() {
 
     switch (state.stage) {
       case STAGES.PROFILE_SETUP: {
-        const unansweredQuestion = nextUnansweredQuestion(state.profile);
-        if (!unansweredQuestion) {
-          ctx.reply(PROFILE_SETUP_COMPLETE_MESSAGE);
-
-          state.stage = STAGES.PROFILE_SETUP_FINISHED;
-          return persistState(ctx.chat.id, state);
-        }
-
+        const unansweredQuestion = nextUnansweredQuestion(state.profile)!;
         const expectedAnswers = QUESTIONS_LIST[unansweredQuestion];
         if (!expectedAnswers.includes(ctx.message.text)) {
           return ctx.reply(
@@ -147,14 +146,15 @@ export async function bootstrapApp() {
 function prepareProposalPrompt(proposal: Proposal) {
   let proposalBody = PROPOSAL_INTRO;
 
-  proposalBody += "Title: " + proposal.title + "\n";
+  proposalBody += `Title: ${proposal.title}\n`;
+  proposalBody += `Proposal: ${proposal.body}\n`;
+  proposalBody += `Answer choices: ${proposal.choices.join('; ')}`;
 
   proposalBody += proposal.body + "\n";
 
   proposalBody += `\n${ANSWER_CHOICES}\n${proposal.choices.join('\n')}`;
 
-  proposalBody = escapeSpecialCharacters(proposalBody);
-  return proposalBody;
+  return escapeSpecialCharacters(proposalBody);
 }
 
 function formQaList(state: ChatState) {
@@ -172,11 +172,11 @@ function generateProfileSystemPrompt(state: ChatState) {
 }
 
 function escapeSpecialCharacters(proposalText: string) {
-  proposalText = proposalText.replace(/-/g, "\\-");
-  proposalText = proposalText.replace(/\(/g, "\\(");
-  proposalText = proposalText.replace(/\)/g, "\\)");
-  proposalText = proposalText.replace(/\./g, "\\.");
-  proposalText = proposalText.replace(/\#/g, "\\#");
+  proposalText = proposalText.replace(/-/g, '\\-');
+  proposalText = proposalText.replace(/\(/g, '\\(');
+  proposalText = proposalText.replace(/\)/g, '\\)');
+  proposalText = proposalText.replace(/\./g, '\\.');
+  proposalText = proposalText.replace(/\#/g, '\\#');
   return proposalText;
 }
 
@@ -186,11 +186,11 @@ async function askNextProfileQuestion(ctx: Context, state: ChatState) {
     if (ctx.chat?.id) {
       await persistState(ctx.chat.id, {
         ...state,
-        stage: STAGES.AWAITING_PROPOSALS,
+        stage: STAGES.PROFILE_SETUP_FINISHED,
       });
     }
 
-    return ctx.reply(PROFILE_SETUP_COMPLETE_MESSAGE);
+    return ctx.reply(PROFILE_SETUP_COMPLETE_MESSAGE, Markup.removeKeyboard());
   }
 
   return ctx.reply(
