@@ -1,5 +1,5 @@
 import { db } from './db';
-import { DEFAULT_PROFILE, Profile } from './profile';
+import { Profile } from './profile';
 
 export const STAGES = {
   WELCOME: 'WELCOME',
@@ -16,7 +16,7 @@ export type ChatState = {
 export function createInitialChatState() {
   return {
     stage: STAGES.WELCOME,
-    profile: DEFAULT_PROFILE,
+    profile: {},
   } as ChatState;
 }
 
@@ -25,7 +25,7 @@ export function persistState(chatId: number, state: ChatState) {
 }
 
 export async function getPersistedState(chatId: number) {
-  const stringifiedBytes = db.get(`chat:${chatId}`);
+  const stringifiedBytes = await db.get(`chat:${chatId}`);
 
-  return JSON.parse(stringifiedBytes.toString()) as Promise<ChatState>;
+  return JSON.parse(stringifiedBytes.toString()) as ChatState;
 }

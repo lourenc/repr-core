@@ -1,31 +1,22 @@
 export type Question = string;
-export type Answer = string | null;
-export type Profile = [Question, Answer][]; // mapping of questions to answers
+export type Answer = string;
+export type Profile = Record<Question, Answer>;
 
-export const DEFAULT_PROFILE: Profile = [
-  ['What is your name?', null],
-  ['How old are you?', null],
-  ['What is your favorite programming language?', null],
-  ['What is your favorite color?', null],
-];
+export const QUESTIONS_LIST = {
+  'What is your name?': [
+    'John Doe',
+    'Mark Zuckerberg',
+    'Elon Musk',
+    'Jeff Bezos',
+  ],
+  'How old are you?': ['18', '19', '20', '21', '60+'],
+  'What is your favorite color?': ['Red', 'Blue', 'Green', 'Yellow'],
+};
 
-Object.freeze(DEFAULT_PROFILE); //let's avoid mutations for god's sake
-DEFAULT_PROFILE.forEach(Object.freeze);
+export function nextUnansweredQuestion(profile: Profile) {
+  const unansweredQuestion = Object.keys(QUESTIONS_LIST).find(
+    (question) => !profile[question]
+  );
 
-export function nextUnansweredQuestion(profile: Profile): Question | null {
-  for (const [question, answer] of profile) {
-    if (answer === null) {
-      return question;
-    }
-  }
-
-  return null;
-}
-
-export function answerQuestion(
-  profile: Profile,
-  question: Question,
-  answer: Answer
-): Profile {
-  return profile.map(([q, a]) => (q === question ? [q, answer] : [q, a]));
+  return unansweredQuestion as keyof typeof QUESTIONS_LIST | undefined;
 }
