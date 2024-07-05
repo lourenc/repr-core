@@ -1,6 +1,6 @@
 import { escapeSpecialCharacters } from './helpers';
 import { SNAPSHOT_GRAPHQL_URL, SNAPSHOT_URL } from './config';
-import { PROPOSAL_INTRO } from './constants';
+import { ANSWER_CHOICES, PROPOSAL_INTRO } from './constants';
 
 const spaces: string[] = ['repr.eth'];
 
@@ -64,12 +64,17 @@ export async function fetchNewProposals() {
 export function getProposalURL(proposal: Proposal, spaceId: string) {
   return `${SNAPSHOT_URL}/#/${spaceId}/proposal/${proposal.id}`;
 }
+
 export function prepareProposalPrompt(proposal: Proposal) {
   let proposalBody = PROPOSAL_INTRO;
 
   proposalBody += `Title: ${proposal.title}\n`;
   proposalBody += `Proposal: ${proposal.body}\n`;
   proposalBody += `Answer choices: ${proposal.choices.join('; ')}`;
+
+  proposalBody += proposal.body + '\n';
+
+  proposalBody += `\n${ANSWER_CHOICES}\n${proposal.choices.join('\n')}`;
 
   return escapeSpecialCharacters(proposalBody);
 }
