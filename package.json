@@ -1,0 +1,22 @@
+{
+  "name": "mimique-bot",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx --watch src/index.ts"
+  },
+  "devDependencies": {
+    "@types/leveldown": "^4.0.6",
+    "@types/levelup": "^5.1.5",
+    "@types/node": "^20.12.7",
+    "tsx": "^4.7.2",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "leveldown": "^6.1.1",
+    "levelup": "^5.1.1",
+    "nanoid": "^5.0.7",
+    "telegraf": "^4.16.3"
+  }
+}
