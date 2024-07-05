@@ -1,6 +1,6 @@
 
-const spaces = []
-const handledProposals = []
+const spaces: string[] = []
+const handledProposals: string[] = []
 
 const fetchNewProposalsQuery = 
     `query {
@@ -23,6 +23,9 @@ const fetchNewProposalsQuery =
         snapshot
         }
     }`
+export async function handle_proposal() {
+    // handle proposal
+}
 
 export async function fetchNewProposals(systemPrompt: string, proposalBody: string, choices: string[]) {    
     const response = await fetch('https://testnet.snapshot.org/graphql', fetchNewProposalsQuery)
