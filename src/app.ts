@@ -18,7 +18,7 @@ import {
 } from './state';
 import { QUESTIONS_LIST, nextUnansweredQuestion } from './profile';
 import { attemptAnswer } from './ai';
-import { Proposal, fetchNewProposals } from './proposals';
+import { Proposal, fetchNewProposals, getProposalURL } from './proposals';
 import { doesSpaceExist } from './spaces';
 
 export async function bootstrapApp() {
@@ -52,44 +52,32 @@ export async function bootstrapApp() {
   });
 
   bot.command('proposals', async (ctx) => {
+    const state = await getPersistedState(ctx.chat.id);
+    if (!state.spaceId) {
+      return ctx.reply('Please set up your space first');
+    }
+
+    const systemPrompt = generateProfileSystemPrompt(state);
+
     ctx.reply('Awaiting proposals');
     const proposals = await fetchNewProposals();
     for (const proposal of proposals) {
-      const proposalText = escapeSpecialCharacters(
-        `*Proposal:* ${proposal.title}\n${
-          proposal.body
-        }\n*Answer choices:* ${proposal.choices.join(', ')}`
-      );
-
-      ctx.reply(proposalText, { parse_mode: 'MarkdownV2' });
+      let proposalSummary = `*Proposal:* ${proposal.title}\n`;
+      const url = getProposalURL(proposal, state.spaceId);
+      proposalSummary = escapeSpecialCharacters(proposalSummary);
+      proposalSummary += `[Read more](${url})`;
+      ctx.reply(proposalSummary, { parse_mode: 'MarkdownV2' });
     }
-
-    const state = await getPersistedState(ctx.chat.id);
-    const systemPrompt = generateProfileSystemPrompt(state);
 
     for (const proposal of proposals) {
       let proposalPrompt = prepareProposalPrompt(proposal);
-
-      ctx.reply('*Asking AI the following:*\n' + proposalPrompt, {
-        parse_mode: 'MarkdownV2',
-      }); //DBG
 
       const response = await attemptAnswer(systemPrompt, proposalPrompt);
 
       ctx.reply(response);
 
-      const answer = response.split('\n').pop();
-
-      ctx.reply('*Final answer:* ' + answer, {
-        parse_mode: 'MarkdownV2',
-        ...Markup.inlineKeyboard([
-          Markup.button.callback(
-            'Agree & submit',
-            'proposal-vote-${id}-${choiceVariant}'
-          ),
-          Markup.button.callback('Do nothing, pls', 'do-nothing-please-xxxx'),
-        ]),
-      });
+      const answer = (response.split('\n').pop() as string).trim();
+      ctx.reply('*Extracted answer:* ' + answer, { parse_mode: 'MarkdownV2' });
     }
 
     return;
@@ -147,8 +135,8 @@ function prepareProposalPrompt(proposal: Proposal) {
 
 function generateProfileSystemPrompt(state: ChatState) {
   let systemPrompt = PROPOSAL_SYSTEM_PROMPT;
-  for (const [q, a] of Object.entries(state.profile)) {
-    systemPrompt += `${q}: ${a}\n`;
+  for (const [que, ans] of Object.entries(state.profile)) {
+    systemPrompt += `${que} ${ans}\n`;
   }
 
   return systemPrompt;
@@ -159,6 +147,7 @@ function escapeSpecialCharacters(proposalText: string) {
   proposalText = proposalText.replace(/\(/g, '\\(');
   proposalText = proposalText.replace(/\)/g, '\\)');
   proposalText = proposalText.replace(/\./g, '\\.');
+  proposalText = proposalText.replace(/\#/g, '\\#');
   return proposalText;
 }
 

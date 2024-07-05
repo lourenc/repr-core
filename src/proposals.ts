@@ -1,7 +1,6 @@
-import { SNAPSHOT_GRAPHQL_URL } from './config';
+import { SNAPSHOT_GRAPHQL_URL, SNAPSHOT_URL } from './config';
 
 const spaces: string[] = ['repr.eth'];
-const handledProposals: string[] = [];
 
 export interface Proposal {
   id: string;
@@ -18,8 +17,8 @@ const fetchNewProposalsQuery = `query Proposals($amount: Int!, $spaces: [String]
     first: $amount,
     skip: 0,
     where: {
-      space_in: $spaces,
-      state: "started"
+        space_in: $spaces,
+        state: "started"
     },
     orderBy: "created",
     orderDirection: desc
@@ -35,7 +34,6 @@ const fetchNewProposalsQuery = `query Proposals($amount: Int!, $spaces: [String]
 }`;
 
 export async function handle_proposal() {
-  // handle proposal
   return true;
 }
 
@@ -59,4 +57,8 @@ export async function fetchNewProposals() {
   const proposals = responseJson.data.proposals;
 
   return proposals as Proposal[];
+}
+
+export function getProposalURL(proposal: Proposal, spaceId: string) {
+  return `${SNAPSHOT_URL}/#/${spaceId}/proposal/${proposal.id}`;
 }
