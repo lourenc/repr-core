@@ -23,6 +23,8 @@ Further steps is to setup your profile. Please type /profile to get started.`;
 export const PROFILE_SETUP_COMPLETE_MESSAGE =
   'Your profile is already setup ✨ You can now indicate DAO Snapshot space name by sending /space command';
 
-export const PROPOSAL_SYSTEM_PROMPT = "You are my digital twin. Here are the answers to the questions defining my values:\n";
+export const PROPOSAL_SYSTEM_PROMPT =
+  'You are my digital twin. Here are the answers to the questions defining my values:\n';
 
-export const PROPOSAL_INTRO = "Please consider the following proposal and provide your answer by selecting one of the choices. Also provide your motivation. Write the final answer on the last line\n"
+export const PROPOSAL_INTRO =
+  'Please consider the following proposal and provide your answer by selecting one of the choices. Also provide your motivation. Write the final choice on the last line, the last line should only include preferred choice and nothing else\n';

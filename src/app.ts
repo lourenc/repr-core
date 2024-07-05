@@ -2,7 +2,12 @@ import { Context, Markup, Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 
 import { TG_BOT_TOKEN } from './config';
-import { PROFILE_SETUP_COMPLETE_MESSAGE, PROPOSAL_INTRO, PROPOSAL_SYSTEM_PROMPT, WELCOME_MESSAGE } from './constants';
+import {
+  PROFILE_SETUP_COMPLETE_MESSAGE,
+  PROPOSAL_INTRO,
+  PROPOSAL_SYSTEM_PROMPT,
+  WELCOME_MESSAGE,
+} from './constants';
 
 import {
   ChatState,
@@ -50,30 +55,44 @@ export async function bootstrapApp() {
     ctx.reply('Awaiting proposals');
     const proposals = await fetchNewProposals();
     for (const proposal of proposals) {
-      let proposalText = (`*Proposal:* ${proposal.title}\n${proposal.body}\n*Answer choices:* ${proposal.choices.join(', ')}`)
-      proposalText = escapeSpecialCharacters(proposalText);
+      const proposalText = escapeSpecialCharacters(
+        `*Proposal:* ${proposal.title}\n${
+          proposal.body
+        }\n*Answer choices:* ${proposal.choices.join(', ')}`
+      );
+
       ctx.reply(proposalText, { parse_mode: 'MarkdownV2' });
     }
 
     const state = await getPersistedState(ctx.chat.id);
-    
     const systemPrompt = generateProfileSystemPrompt(state);
 
     for (const proposal of proposals) {
       let proposalPrompt = prepareProposalPrompt(proposal);
-      
-      ctx.reply("*Asking AI the following:*\n" + proposalPrompt, { parse_mode: 'MarkdownV2' }); //DBG
 
-      const response = await attemptAnswer(systemPrompt, proposalPrompt)
-      
-      ctx.reply(response)
+      ctx.reply('*Asking AI the following:*\n' + proposalPrompt, {
+        parse_mode: 'MarkdownV2',
+      }); //DBG
 
-      const answer = response.split("\n").pop().trim();
-      ctx.reply("*Final answer:* " + answer, { parse_mode: 'MarkdownV2' });
+      const response = await attemptAnswer(systemPrompt, proposalPrompt);
+
+      ctx.reply(response);
+
+      const answer = response.split('\n').pop();
+
+      ctx.reply('*Final answer:* ' + answer, {
+        parse_mode: 'MarkdownV2',
+        ...Markup.inlineKeyboard([
+          Markup.button.callback(
+            'Agree & submit',
+            'proposal-vote-${id}-${choiceVariant}'
+          ),
+          Markup.button.callback('Do nothing, pls', 'do-nothing-please-xxxx'),
+        ]),
+      });
     }
 
-
-    return
+    return;
   });
 
   bot.on(message('text'), async (ctx) => {
@@ -81,14 +100,7 @@ export async function bootstrapApp() {
 
     switch (state.stage) {
       case STAGES.PROFILE_SETUP: {
-        const unansweredQuestion = nextUnansweredQuestion(state.profile);
-        if (!unansweredQuestion) {
-          ctx.reply(PROFILE_SETUP_COMPLETE_MESSAGE);
-
-          state.stage = STAGES.PROFILE_SETUP_FINISHED;
-          return persistState(ctx.chat.id, state);
-        }
-
+        const unansweredQuestion = nextUnansweredQuestion(state.profile)!;
         const expectedAnswers = QUESTIONS_LIST[unansweredQuestion];
         if (!expectedAnswers.includes(ctx.message.text)) {
           return ctx.reply(
@@ -126,30 +138,27 @@ export async function bootstrapApp() {
 function prepareProposalPrompt(proposal: Proposal) {
   let proposalBody = PROPOSAL_INTRO;
 
-  proposalBody += "Title: " + proposal.title + "\n";
+  proposalBody += `Title: ${proposal.title}\n`;
+  proposalBody += `Proposal: ${proposal.body}\n`;
+  proposalBody += `Answer choices: ${proposal.choices.join('; ')}`;
 
-  proposalBody += "Proposal: " + proposal.body + "\n";
-
-  // let choice = "x";
-  proposalBody += `\nAnswer choices: ${proposal.choices.join('; ')}`;
-
-  proposalBody = escapeSpecialCharacters(proposalBody);
-  return proposalBody;
+  return escapeSpecialCharacters(proposalBody);
 }
 
 function generateProfileSystemPrompt(state: ChatState) {
   let systemPrompt = PROPOSAL_SYSTEM_PROMPT;
-  for (const [que, ans] of Object.entries(state.profile)) {
-    systemPrompt += `${que}: ${ans}\n`;
+  for (const [q, a] of Object.entries(state.profile)) {
+    systemPrompt += `${q}: ${a}\n`;
   }
+
   return systemPrompt;
 }
 
 function escapeSpecialCharacters(proposalText: string) {
-  proposalText = proposalText.replace(/-/g, "\\-");
-  proposalText = proposalText.replace(/\(/g, "\\(");
-  proposalText = proposalText.replace(/\)/g, "\\)");
-  proposalText = proposalText.replace(/\./g, "\\.");
+  proposalText = proposalText.replace(/-/g, '\\-');
+  proposalText = proposalText.replace(/\(/g, '\\(');
+  proposalText = proposalText.replace(/\)/g, '\\)');
+  proposalText = proposalText.replace(/\./g, '\\.');
   return proposalText;
 }
 
@@ -159,11 +168,11 @@ async function askNextProfileQuestion(ctx: Context, state: ChatState) {
     if (ctx.chat?.id) {
       await persistState(ctx.chat.id, {
         ...state,
-        stage: STAGES.AWAITING_PROPOSALS,
+        stage: STAGES.PROFILE_SETUP_FINISHED,
       });
     }
 
-    return ctx.reply(PROFILE_SETUP_COMPLETE_MESSAGE);
+    return ctx.reply(PROFILE_SETUP_COMPLETE_MESSAGE, Markup.removeKeyboard());
   }
 
   return ctx.reply(
