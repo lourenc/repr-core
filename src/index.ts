@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import 'dotenv/config';
 import { bootstrapApp } from './app';
 
 async function main() {

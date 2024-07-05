@@ -19,3 +19,6 @@ Here's what I can do for you:
 Welcome aboard, and happy voting! 🗳️🚀
 
 Further steps is to setup your profile. Please type /profile to get started.`;
+
+export const PROFILE_SETUP_COMPLETE_MESSAGE =
+  'Your profile is already setup ✨ You can now indicate DAO Snapshot space name by sending /space command';

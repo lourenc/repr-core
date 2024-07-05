@@ -4,12 +4,16 @@ import { Profile } from './profile';
 export const STAGES = {
   WELCOME: 'WELCOME',
   PROFILE_SETUP: 'PROFILE_SETUP',
+  PROFILE_SETUP_FINISHED: 'PROFILE_SETUP_FINISHED',
+  SPACE_SETUP: 'SPACE_SETUP',
+  SPACE_SETUP_FINISHED: 'SPACE_SETUP_FINISHED',
   VOTING_SETUP: 'VOTING_SETUP',
   AWAITING_PROPOSALS: 'AWAITING_PROPOSALS',
 } as const;
 
 export type ChatState = {
   stage: keyof typeof STAGES;
+  spaceId?: string;
   profile: Profile;
 };
 
