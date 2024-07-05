@@ -16,4 +16,6 @@ Here's what I can do for you:
 🔔 Set Voting Reminders: Never miss a vote with our timely reminders.
 🤔 Answer Your Questions: Have queries about the DAO or a specific proposal? Just ask me!
 
-Welcome aboard, and happy voting! 🗳️🚀`;
+Welcome aboard, and happy voting! 🗳️🚀
+
+Further steps is to setup your profile. Please type /profile to get started.`;
