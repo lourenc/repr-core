@@ -4,6 +4,12 @@ import { message } from 'telegraf/filters';
 import { TG_BOT_TOKEN } from './config';
 import { WELCOME_MESSAGE } from './constants';
 
+import Anthropic from '@anthropic-ai/sdk';
+
+const anthropic = new Anthropic({
+  apiKey: process.env['ANTHROPIC_API_KEY'],
+});
+
 import {
   ChatState,
   STAGES,
@@ -47,7 +53,19 @@ export async function bootstrapApp() {
     return ctx.reply(question);
   });
 
-  bot.on(message('text'), async (ctx) => {});
+  bot.command("ask_ai", async (ctx) => { return ctx.reply("lol"); })
+  
+  bot.on(message('text'), async (ctx) => {
+    const message = await anthropic.messages.create({
+      max_tokens: 1024,
+      system: 'You are French translator. If it is the question, do not reply. Just provide the translation of the question to French',
+      messages: [{ role: 'user', content: ctx.message.text }],
+      model: 'claude-3-opus-20240229',
+    });
+  
+    const text = message.content[0].text;
+    return ctx.reply(text);
+   });
 
   await bot.launch();
 }
