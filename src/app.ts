@@ -6,6 +6,7 @@ import {
   PROFILE_SETUP_COMPLETE_MESSAGE,
   PROPOSAL_SYSTEM_PROMPT,
   WELCOME_MESSAGE,
+  SUMMARIZE_PERSONALITY,
 } from './constants';
 
 import {
@@ -55,6 +56,30 @@ export async function bootstrapApp() {
     return ctx.reply('Please, provide the space ID:');
   });
 
+  bot.command('sumup', async (ctx) => {
+    ctx.reply('Summarizing personality');
+    const state = await getPersistedState(ctx.chat.id);
+    const qa = formQaList(state);
+
+    const response = await attemptAnswer(SUMMARIZE_PERSONALITY, qa);
+
+    return ctx.reply(response);
+  });
+
+  bot.command('info', async (ctx) => {
+    const state = await getPersistedState(ctx.chat.id);
+    const qa = formQaList(state);
+    ctx.reply(qa);
+
+    ctx.reply(
+      state.spaceId
+        ? `Currently connected space: ${state.spaceId}`
+        : 'No space ID set'
+    );
+
+    return;
+  });
+
   bot.command('proposals', async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
     if (!state.spaceId) {
@@ -63,8 +88,7 @@ export async function bootstrapApp() {
 
     const systemPrompt = generateProfileSystemPrompt(state);
 
-    ctx.reply('Awaiting proposals');
-
+    ctx.reply('Fetchin unhandled proposals');
     const proposals = await fetchNewProposals();
 
     for (const proposal of proposals) {
@@ -75,13 +99,10 @@ export async function bootstrapApp() {
       )}\n[Read more](${url})`;
 
       ctx.reply(proposalSummary, { parse_mode: 'MarkdownV2' });
-    }
 
-    for (const proposal of proposals) {
       let proposalPrompt = prepareProposalPrompt(proposal);
 
       const response = await attemptAnswer(systemPrompt, proposalPrompt);
-
       ctx.reply(response);
 
       const answer = (response.split('\n').pop() as string).trim();
@@ -131,13 +152,18 @@ export async function bootstrapApp() {
   await bot.launch();
 }
 
-function generateProfileSystemPrompt(state: ChatState) {
-  let systemPrompt = PROPOSAL_SYSTEM_PROMPT;
+function formQaList(state: ChatState) {
+  let qaList = '';
   for (const [que, ans] of Object.entries(state.profile)) {
-    systemPrompt += `${que} ${ans}\n`;
+    qaList += `${que} ${ans}\n`;
   }
+  return qaList;
+}
 
-  return systemPrompt;
+function generateProfileSystemPrompt(state: ChatState) {
+  const systemPrompt = PROPOSAL_SYSTEM_PROMPT;
+  const qaList = formQaList(state);
+  return systemPrompt + qaList;
 }
 
 async function askNextProfileQuestion(ctx: Context, state: ChatState) {
