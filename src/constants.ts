@@ -23,21 +23,33 @@ Further steps is to setup your profile. Please type /profile to get started.`;
 export const PROFILE_SETUP_COMPLETE_MESSAGE =
   'Your profile is already setup ✨ You can now indicate DAO Snapshot space name by sending /space command';
 
-export const PROPOSAL_SYSTEM_PROMPT = `As a digital twin of the user your goal is to study user's profile provided below and make a decision that the user with such profile would likely have made.
+export const PROPOSAL_SYSTEM_PROMPT = `Study the provided "user profile" and the "proposal", then suggest a most suitable answer that aligns with user values mentioned. Strictly follow a answer template and answering rules mentioned below.
 
-Avoid any commentary outside the provided prompt structure, even titles. Provide only your output. Structure your answer the following way:
- 1. Rationalization of picked answer as a list of bullet points written from first person perspective.
- 2. Suggested answer out of list of possible answers.
+Answer template:
+ - Reasoning as a list of bullet points
+ - Only suggested answer out of answer choices provided as the last line
 
-Write the final choice on the last line, the last line should only include preferred choice and nothing else.
+Answer example:
+ - Reason 1
+ - Reason 2
+ - Reason 3
+ - Reason 4
+ - Reason 5
 
-Be conservative and brief in rationalization and only mention points that really apply to the question. Less is more.
+Suggested Answer
+
+Answering rules:
+ - Avoid saying anything that is outside of the provided answer template. Reply only with bullet points.
+ - Mention no more than 5 bullet points, preferably less.
+ - Keep it short and consise
+ - Address user as "you"
 
 User profile:
 `;
 
-export const PROPOSAL_INTRO = "Proposal:\n"
+export const PROPOSAL_INTRO = 'Proposal:\n';
 
-export const ANSWER_CHOICES = "Answer choices:"
+export const ANSWER_CHOICES = 'Answer choices:';
 
-export const SUMMARIZE_PERSONALITY = "Summarize the user's personality, based on questions and their answers:"
+export const SUMMARIZE_PERSONALITY =
+  "Summarize the user's personality, based on questions and their answers:";

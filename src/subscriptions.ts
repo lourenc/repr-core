@@ -51,7 +51,7 @@ export async function pollSubscriptions(bot: Telegraf) {
       });
 
       const proposalPrompt = prepareProposalPrompt(proposal);
-      const response = await attemptAnswer(systemPrompt, proposalPrompt);
+      const response = await attemptAnswer('', systemPrompt + proposalPrompt);
 
       await bot.telegram.sendMessage(
         chatId,
@@ -74,7 +74,9 @@ export async function pollSubscriptions(bot: Telegraf) {
           .pop() as string
       ).trim();
 
-      const choiceIndex = proposal.choices.indexOf(choice);
+      const choiceIndex = proposal.choices
+        .map((choice) => choice.trim())
+        .indexOf(choice);
 
       if (choiceIndex === -1) {
         await bot.telegram.sendMessage(
