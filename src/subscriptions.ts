@@ -1,4 +1,4 @@
-import { Telegraf } from 'telegraf';
+import { Markup, Telegraf } from 'telegraf';
 import { db } from './db';
 import {
   fetchProposals,
@@ -47,20 +47,40 @@ export async function pollSubscriptions(bot: Telegraf) {
 
       await bot.telegram.sendMessage(chatId, escapeSpecialCharacters(response));
 
-      const answer = (response.split('\n').pop() as string).trim();
-
-      await bot.telegram.sendMessage(
-        chatId,
-        '*Extracted answer:* ' + escapeSpecialCharacters(answer),
-        {
-          parse_mode: 'MarkdownV2',
-        }
-      );
-
       await persistState(chatId, {
         ...userState,
         knownProposalIds: [...userState.knownProposalIds, proposal.id],
       });
+
+      const choice = (response.split('\n').pop() as string).trim();
+      const choiceIndex = proposal.choices.indexOf(choice);
+
+      if (choiceIndex === -1) {
+        await bot.telegram.sendMessage(
+          chatId,
+          'Cannot suggest a choice for this proposal.',
+          {
+            parse_mode: 'MarkdownV2',
+          }
+        );
+      } else {
+        const inlineKeyboard = Markup.inlineKeyboard([
+          Markup.button.callback(
+            'Accept & vote',
+            `${proposal.id.substring(2)}`
+          ),
+          Markup.button.callback('Ignore', `${proposal.id.substring(2)}`),
+        ]);
+
+        await bot.telegram.sendMessage(
+          chatId,
+          '*Suggested choice:* ' + escapeSpecialCharacters(choice),
+          {
+            parse_mode: 'MarkdownV2',
+            ...inlineKeyboard,
+          }
+        );
+      }
 
       await new Promise((resolve) => setTimeout(resolve, 15000));
     }

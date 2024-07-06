@@ -110,6 +110,10 @@ export async function bootstrapApp() {
     return;
   });
 
+  // bot.action('profile', async (ctx) => {
+  //   ctx.answer;
+  // });
+
   bot.on(message('text'), async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
 
