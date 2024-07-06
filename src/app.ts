@@ -116,6 +116,17 @@ export async function bootstrapApp() {
     const proposalId = `0x${base64ToHex(ctx.match[1])}`;
     const choice = parseInt(ctx.match[2]);
 
+    const chatId = ctx.chat?.id;
+
+    if (!chatId) {
+      // couldn't happen probably but typescript is not smart enough
+      return ctx.answerCbQuery(`Could not find chat ID`);
+    }
+
+    const state = await getPersistedState(ctx.chat.id);
+    state.stage = STAGES.AWAITING_PROPOSALS;
+    await persistState(ctx.chat.id, state);
+
     ctx.answerCbQuery(`Voting for proposal ${proposalId}, choice ${choice}`);
   });
 
@@ -124,10 +135,13 @@ export async function bootstrapApp() {
     const chatId = ctx.chat?.id;
 
     if (!chatId) {
+      // couldn't happen probably but typescript is not smart enough
       return ctx.answerCbQuery(`Could not find chat ID`);
     }
 
     const state = await getPersistedState(ctx.chat.id);
+    state.stage = STAGES.AWAITING_PROPOSALS;
+    await persistState(ctx.chat.id, state);
 
     ctx.answerCbQuery(`Ignoring proposal ${proposalId}`);
     ctx.editMessageReplyMarkup(Markup.removeKeyboard() as any);
