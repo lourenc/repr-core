@@ -65,6 +65,13 @@ export async function bootstrapApp() {
     return ctx.reply('Please, provide the space ID:');
   });
 
+  bot.command('reset', async (ctx) => {
+    const state = await getPersistedState(ctx.chat.id);
+    state.stage = STAGES.AWAITING_PROPOSALS;
+
+    await persistState(ctx.chat.id, state);
+  });
+
   bot.command('delegate', async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
 
@@ -154,12 +161,20 @@ export async function bootstrapApp() {
 
     const wallet = getWallet(state.delegateKey!);
     const result = await doVote(wallet, proposalId, choice + 1, state.spaceId!);
-    console.log("delegate addr", wallet.account!.address)
-    console.log("choice", choice, "proposalId", proposalId);
+
+    console.log('delegate addr', wallet.account!.address);
+    console.log('choice', choice, 'proposalId', proposalId);
+
     if (result.error) {
-      return ctx.reply(`Error: ${result.error_description}`);
+      return ctx.reply(`🥊 Error: ${result.error_description}`);
     }
-    ctx.reply(`Vote submitted! ✅`);
+    ctx.reply(`✅ Vote submitted!`);
+
+    try {
+      await ctx.editMessageReplyMarkup(Markup.removeKeyboard() as any);
+    } catch (e) {
+      console.error(e);
+    }
 
     state.stage = STAGES.AWAITING_PROPOSALS;
     await persistState(ctx.chat.id, state);
@@ -207,7 +222,7 @@ export async function bootstrapApp() {
         const expectedAnswers = QUESTIONS_LIST[unansweredQuestion];
         if (!expectedAnswers.includes(ctx.message.text)) {
           return ctx.reply(
-            `Please select one of the following options: ${expectedAnswers.join(
+            `🤔 Please select one of the following options: ${expectedAnswers.join(
               ', '
             )}`
           );
@@ -266,7 +281,7 @@ async function askNextProfileQuestion(ctx: Context, state: ChatState) {
     Markup.keyboard(
       QUESTIONS_LIST[question].map((answer) => ({ text: answer })),
       {
-        columns: 3,
+        columns: 1,
       }
     )
       .oneTime(true)

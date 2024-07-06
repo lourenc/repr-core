@@ -53,7 +53,13 @@ export async function pollSubscriptions(bot: Telegraf) {
       const proposalPrompt = prepareProposalPrompt(proposal);
       const response = await attemptAnswer(systemPrompt, proposalPrompt);
 
-      await bot.telegram.sendMessage(chatId, escapeSpecialCharacters(response));
+      await bot.telegram.sendMessage(
+        chatId,
+        escapeSpecialCharacters(response),
+        {
+          parse_mode: 'MarkdownV2',
+        }
+      );
 
       await persistState(chatId, {
         ...userState,
@@ -67,9 +73,15 @@ export async function pollSubscriptions(bot: Telegraf) {
       if (choiceIndex === -1) {
         await bot.telegram.sendMessage(
           chatId,
-          'Cannot suggest a choice for this proposal.',
+          'Cannot suggest a choice for this proposal\\.',
           {
             parse_mode: 'MarkdownV2',
+            ...Markup.inlineKeyboard([
+              Markup.button.callback(
+                'Ignore',
+                `ignore-${hexToBase64(proposal.id.substring(2))}`
+              ),
+            ]),
           }
         );
       } else {
