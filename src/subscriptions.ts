@@ -1,0 +1,105 @@
+import { Telegraf } from 'telegraf';
+import { db } from './db';
+import {
+  fetchProposals,
+  getProposalSummary,
+  prepareProposalPrompt,
+} from './proposals';
+import { attemptAnswer } from './ai';
+import { getPersistedState, persistState } from './state';
+import { generateProfileSystemPrompt } from './profile';
+import { escapeSpecialCharacters } from './helpers';
+
+export async function pollSubscriptions(bot: Telegraf) {
+  const spacesToWatch = await getSpacesToWatch();
+  const proposals = await fetchProposals(spacesToWatch);
+
+  console.info(`fetched ${proposals.length} proposals...`);
+
+  for (const proposal of proposals) {
+    const usersSubscribedToSpace = await getUsersSubscribedToSpace(
+      proposal.space.id
+    );
+
+    console.info(`found proposal ${proposal.id} ${proposal.title}`);
+    console.info(`total users subscribed: ${usersSubscribedToSpace.length}`);
+    console.info('usersSubscribedToSpace', usersSubscribedToSpace);
+
+    for (const chatId of usersSubscribedToSpace) {
+      const userState = await getPersistedState(chatId);
+      console.info(`user ${chatId} state`, userState);
+      if (userState.knownProposalIds.includes(proposal.id)) {
+        console.info(
+          `user ${chatId} already knows about proposal ${proposal.id}`
+        );
+        continue; // we don't want to spam the user with the same proposal
+      }
+
+      const systemPrompt = generateProfileSystemPrompt(userState);
+      const proposalSummary = getProposalSummary(proposal);
+
+      await bot.telegram.sendMessage(chatId, proposalSummary, {
+        parse_mode: 'MarkdownV2',
+      });
+
+      const proposalPrompt = prepareProposalPrompt(proposal);
+      const response = await attemptAnswer(systemPrompt, proposalPrompt);
+
+      await bot.telegram.sendMessage(chatId, escapeSpecialCharacters(response));
+
+      const answer = (response.split('\n').pop() as string).trim();
+
+      await bot.telegram.sendMessage(
+        chatId,
+        '*Extracted answer:* ' + escapeSpecialCharacters(answer),
+        {
+          parse_mode: 'MarkdownV2',
+        }
+      );
+
+      await persistState(chatId, {
+        ...userState,
+        knownProposalIds: [...userState.knownProposalIds, proposal.id],
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 15000));
+    }
+  }
+}
+
+export async function saveSubscription(chatId: number, spaceId: string) {
+  const usersSubscribedToSpace = await getUsersSubscribedToSpace(spaceId);
+  if (!usersSubscribedToSpace.includes(chatId)) {
+    usersSubscribedToSpace.push(chatId);
+  }
+
+  await db.put(
+    `users-subscribed-to-space:${spaceId}`,
+    JSON.stringify(usersSubscribedToSpace)
+  );
+
+  const spacesWatchlist = await getSpacesToWatch();
+  if (!spacesWatchlist.includes(spaceId)) {
+    spacesWatchlist.push(spaceId);
+  }
+
+  await db.put(`spaces-to-watch`, JSON.stringify(spacesWatchlist));
+}
+
+async function getUsersSubscribedToSpace(spaceId: string) {
+  try {
+    const raw = await db.get(`users-subscribed-to-space:${spaceId}`);
+    return JSON.parse(raw.toString()) as number[];
+  } catch (e: unknown) {
+    return [];
+  }
+}
+
+async function getSpacesToWatch() {
+  try {
+    const raw = await db.get(`spaces-to-watch`);
+    return JSON.parse(raw.toString()) as string[];
+  } catch (e: unknown) {
+    return [];
+  }
+}

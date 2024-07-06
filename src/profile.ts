@@ -1,5 +1,8 @@
 // import QUESTIONS_LIST from './questions.json';
 
+import { PROPOSAL_SYSTEM_PROMPT } from './constants';
+import { ChatState } from './state';
+
 export type Question = string;
 export type Answer = string;
 export type Profile = Record<Question, Answer>;
@@ -23,4 +26,17 @@ export function nextUnansweredQuestion(profile: Profile) {
   return unansweredQuestion as keyof typeof QUESTIONS_LIST | undefined;
 }
 
+export function formQaList(state: ChatState) {
+  let qaList = '';
+  for (const [que, ans] of Object.entries(state.profile)) {
+    qaList += `${que} ${ans}\n`;
+  }
+  return qaList;
+}
+
+export function generateProfileSystemPrompt(state: ChatState) {
+  const systemPrompt = PROPOSAL_SYSTEM_PROMPT;
+  const qaList = formQaList(state);
+  return systemPrompt + qaList;
+}
 // export { QUESTIONS_LIST };

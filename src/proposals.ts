@@ -1,8 +1,7 @@
 import { escapeSpecialCharacters } from './helpers';
-import { SNAPSHOT_GRAPHQL_URL, SNAPSHOT_URL } from './config';
-import { ANSWER_CHOICES, PROPOSAL_INTRO } from './constants';
 
-const spaces: string[] = ['repr.eth'];
+import { SNAPSHOT_GRAPHQL_URL, SNAPSHOT_URL, TG_BOT_TOKEN } from './config';
+import { ANSWER_CHOICES, PROPOSAL_INTRO } from './constants';
 
 export interface Proposal {
   id: string;
@@ -12,15 +11,18 @@ export interface Proposal {
   start: number;
   end: number;
   snapshot: string;
+  space: {
+    id: string;
+    name: string;
+  };
 }
 
-const fetchNewProposalsQuery = `query Proposals($amount: Int!, $spaces: [String]!){
+const PROPOSALS_QUERY = `query Proposals($spaces: [String]!){
   proposals (
-    first: $amount,
     skip: 0,
     where: {
         space_in: $spaces,
-        state: "started"
+        state: "active"
     },
     orderBy: "created",
     orderDirection: desc
@@ -32,37 +34,45 @@ const fetchNewProposalsQuery = `query Proposals($amount: Int!, $spaces: [String]
     start
     end
     snapshot
+    space {
+      id
+      name
+    }
   }
 }`;
 
-export async function handle_proposal() {
-  return true;
-}
+export async function fetchProposals(spaces: string[]) {
+  if (!spaces.length) {
+    return [];
+  }
 
-export async function fetchNewProposals() {
   const response = await fetch(SNAPSHOT_GRAPHQL_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      query: fetchNewProposalsQuery,
+      query: PROPOSALS_QUERY,
       variables: {
         spaces: spaces,
-        amount: 1,
       },
     }),
-  });
+  }).then((res) => res.json());
+  console.info('response', response);
 
-  const responseJson = await response.json();
-
-  const proposals = responseJson.data.proposals;
-
-  return proposals as Proposal[];
+  return response.data.proposals as Proposal[];
 }
 
 export function getProposalURL(proposal: Proposal, spaceId: string) {
   return `${SNAPSHOT_URL}/#/${spaceId}/proposal/${proposal.id}`;
+}
+
+export function getProposalSummary(proposal: Proposal) {
+  const url = getProposalURL(proposal, proposal.space.id);
+
+  return `*Proposal:* ${escapeSpecialCharacters(
+    proposal.title
+  )}\n[Read more](${url})`;
 }
 
 export function prepareProposalPrompt(proposal: Proposal) {

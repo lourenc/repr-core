@@ -13,8 +13,9 @@ export const STAGES = {
 
 export type ChatState = {
   stage: keyof typeof STAGES;
-  spaceId?: string;
   profile: Profile;
+  knownProposalIds: string[];
+  spaceId?: string;
 };
 
 /** something about data */
@@ -22,6 +23,7 @@ export function createInitialChatState() {
   return {
     stage: STAGES.WELCOME,
     profile: {},
+    knownProposalIds: [],
   } as ChatState;
 }
 

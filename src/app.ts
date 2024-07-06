@@ -4,7 +4,6 @@ import { message } from 'telegraf/filters';
 import { TG_BOT_TOKEN } from './config';
 import {
   PROFILE_SETUP_COMPLETE_MESSAGE,
-  PROPOSAL_SYSTEM_PROMPT,
   WELCOME_MESSAGE,
   SUMMARIZE_PERSONALITY,
 } from './constants';
@@ -16,15 +15,20 @@ import {
   getPersistedState,
   persistState,
 } from './state';
-import { QUESTIONS_LIST, nextUnansweredQuestion } from './profile';
+import {
+  QUESTIONS_LIST,
+  formQaList,
+  generateProfileSystemPrompt,
+  nextUnansweredQuestion,
+} from './profile';
 import { attemptAnswer } from './ai';
 import { doesSpaceExist } from './spaces';
-import { escapeSpecialCharacters } from './helpers';
 import {
-  fetchNewProposals,
-  getProposalURL,
+  fetchProposals,
+  getProposalSummary,
   prepareProposalPrompt,
 } from './proposals';
+import { pollSubscriptions, saveSubscription } from './subscriptions';
 
 export async function bootstrapApp() {
   const bot = new Telegraf(TG_BOT_TOKEN);
@@ -89,19 +93,13 @@ export async function bootstrapApp() {
     const systemPrompt = generateProfileSystemPrompt(state);
 
     ctx.reply('Fetchin unhandled proposals');
-    const proposals = await fetchNewProposals();
+    const proposals = await fetchProposals([state.spaceId]);
 
     for (const proposal of proposals) {
-      const url = getProposalURL(proposal, state.spaceId);
-
-      const proposalSummary = `*Proposal:* ${escapeSpecialCharacters(
-        proposal.title
-      )}\n[Read more](${url})`;
-
+      const proposalSummary = getProposalSummary(proposal);
       ctx.reply(proposalSummary, { parse_mode: 'MarkdownV2' });
 
-      let proposalPrompt = prepareProposalPrompt(proposal);
-
+      const proposalPrompt = prepareProposalPrompt(proposal);
       const response = await attemptAnswer(systemPrompt, proposalPrompt);
       ctx.reply(response);
 
@@ -142,28 +140,22 @@ export async function bootstrapApp() {
           state.spaceId = spaceId;
           state.stage = STAGES.SPACE_SETUP_FINISHED;
 
+          await saveSubscription(ctx.chat.id, spaceId);
           await persistState(ctx.chat.id, state);
+
           return ctx.reply('Hooray! Space setup is complete');
         }
       }
     }
   });
 
+  setTimeout(async function loop() {
+    await pollSubscriptions(bot);
+
+    setTimeout(loop, 10000);
+  });
+
   await bot.launch();
-}
-
-function formQaList(state: ChatState) {
-  let qaList = '';
-  for (const [que, ans] of Object.entries(state.profile)) {
-    qaList += `${que} ${ans}\n`;
-  }
-  return qaList;
-}
-
-function generateProfileSystemPrompt(state: ChatState) {
-  const systemPrompt = PROPOSAL_SYSTEM_PROMPT;
-  const qaList = formQaList(state);
-  return systemPrompt + qaList;
 }
 
 async function askNextProfileQuestion(ctx: Context, state: ChatState) {
