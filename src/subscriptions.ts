@@ -9,6 +9,7 @@ import { attemptAnswer } from './ai';
 import { getPersistedState, persistState } from './state';
 import { generateProfileSystemPrompt } from './profile';
 import { escapeSpecialCharacters, hexToBase64 } from './helpers';
+import { STAGES } from './state';
 
 export async function pollSubscriptions(bot: Telegraf) {
   const spacesToWatch = await getSpacesToWatch();
@@ -30,7 +31,10 @@ export async function pollSubscriptions(bot: Telegraf) {
 
       console.info(`user ${chatId} state`, userState);
 
-      if (userState.knownProposalIds.includes(proposal.id)) {
+      if (
+        userState.knownProposalIds.includes(proposal.id) ||
+        userState.stage == STAGES.AWAITING_USER_DECISION
+      ) {
         console.info(
           `user ${chatId} already knows about proposal ${proposal.id}`
         );
@@ -52,6 +56,7 @@ export async function pollSubscriptions(bot: Telegraf) {
       await persistState(chatId, {
         ...userState,
         knownProposalIds: [...userState.knownProposalIds, proposal.id],
+        stage: STAGES.AWAITING_USER_DECISION,
       });
 
       const choice = (response.split('\n').pop() as string).trim();
