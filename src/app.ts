@@ -1,7 +1,7 @@
 import { Context, Markup, Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 
-import { TG_BOT_TOKEN } from './config';
+import { SNAPSHOT_URL, TG_BOT_TOKEN } from './config';
 import {
   PROFILE_SETUP_COMPLETE_MESSAGE,
   WELCOME_MESSAGE,
@@ -30,6 +30,8 @@ import {
 } from './proposals';
 import { pollSubscriptions, saveSubscription } from './subscriptions';
 
+import { generateNewSecretKey, getWallet } from './snapshot-api';
+
 export async function bootstrapApp() {
   const bot = new Telegraf(TG_BOT_TOKEN);
 
@@ -51,6 +53,16 @@ export async function bootstrapApp() {
     return askNextProfileQuestion(ctx, state);
   });
 
+  bot.command("send", async (ctx) => {
+    const state = await getPersistedState(ctx.chat.id);
+    state.profile = {};
+    state.stage = STAGES.PROFILE_SETUP;
+
+    await persistState(ctx.chat.id, state);
+
+    return askNextProfileQuestion(ctx, state);
+  });
+
   bot.command('space', async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
     state.stage = STAGES.SPACE_SETUP;
@@ -58,6 +70,20 @@ export async function bootstrapApp() {
     await persistState(ctx.chat.id, state);
 
     return ctx.reply('Please, provide the space ID:');
+  });
+
+  bot.command("delegate", async (ctx) => {
+    const state = await getPersistedState(ctx.chat.id);
+
+    if (!state.delegateKey) {
+      state.delegateKey = generateNewSecretKey();
+      await persistState(ctx.chat.id, state);
+      ctx.reply('New address created!');
+    }
+
+    const wallet = getWallet(state.delegateKey);
+    const address = wallet.account!.address;
+    return ctx.reply(`Assign delegation rights using link [here](${SNAPSHOT_URL}/#/delegate/${state.spaceId}/${address})`, { parse_mode: 'MarkdownV2' });
   });
 
   bot.command('sumup', async (ctx) => {
@@ -143,6 +169,8 @@ export async function bootstrapApp() {
         } else {
           state.spaceId = spaceId;
           state.stage = STAGES.SPACE_SETUP_FINISHED;
+
+          state.knownProposalIds = [];
 
           await saveSubscription(ctx.chat.id, spaceId);
           await persistState(ctx.chat.id, state);

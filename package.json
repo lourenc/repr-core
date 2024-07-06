@@ -19,6 +19,7 @@
     "leveldown": "^6.1.1",
     "levelup": "^5.1.1",
     "nanoid": "^5.0.7",
-    "telegraf": "^4.16.3"
+    "telegraf": "^4.16.3",
+    "viem": "^2.17.2"
   }
 }
