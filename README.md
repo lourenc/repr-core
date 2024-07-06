@@ -1,4 +1,6 @@
-### Repr AI bot - your DAO voting representative
+# Repr AI bot - your DAO voting representative
+
+### Overview
 
 Repr AI bot is a DAO voting representative that uses AI to analyze proposals and vote on behalf of the DAO members. The bot is designed to help DAO member make better decisions by providing unbiased, data-driven analysis of proposals.
 
