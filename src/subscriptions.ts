@@ -44,18 +44,24 @@ export async function pollSubscriptions(bot: Telegraf) {
       }
 
       const systemPrompt = generateProfileSystemPrompt(userState);
-      const proposalSummary = getProposalSummary(proposal);
+      const proposalSummary = getProposalSummary(proposal).trim();
 
       await bot.telegram.sendMessage(chatId, proposalSummary, {
         parse_mode: 'MarkdownV2',
       });
 
       const proposalPrompt = prepareProposalPrompt(proposal);
-      const response = await attemptAnswer('', systemPrompt + proposalPrompt);
+      const response = (
+        await attemptAnswer('', systemPrompt + proposalPrompt)
+      ).trim();
+      const lastLineIndex = response.lastIndexOf('\n');
 
       await bot.telegram.sendMessage(
         chatId,
-        escapeSpecialCharacters(response),
+        '*AI thoughts:*\n' +
+          escapeSpecialCharacters(
+            lastLineIndex > 0 ? response.substring(0, lastLineIndex) : response
+          ),
         {
           parse_mode: 'MarkdownV2',
         }
