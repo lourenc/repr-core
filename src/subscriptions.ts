@@ -67,7 +67,13 @@ export async function pollSubscriptions(bot: Telegraf) {
         stage: STAGES.AWAITING_USER_DECISION,
       });
 
-      const choice = (response.split('\n').pop() as string).trim();
+      const choice = (
+        response
+          .split('\n')
+          .filter((str) => str !== '')
+          .pop() as string
+      ).trim();
+
       const choiceIndex = proposal.choices.indexOf(choice);
 
       if (choiceIndex === -1) {
