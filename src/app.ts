@@ -32,7 +32,7 @@ import {
 import { pollSubscriptions, saveSubscription } from './subscriptions';
 import { base64ToHex } from './helpers';
 
-import { generateNewSecretKey, getWallet } from './snapshot-api';
+import { generateNewSecretKey, getWallet, doVote } from './snapshot-api';
 
 export async function bootstrapApp() {
   const bot = new Telegraf(TG_BOT_TOKEN);
@@ -139,7 +139,7 @@ export async function bootstrapApp() {
   });
 
   bot.action(/vote-(.+)-(\d)/, async (ctx) => {
-    const proposalId = `0x${base64ToHex(ctx.match[1])}`;
+    const proposalId:`0x${string}` = `0x${base64ToHex(ctx.match[1])}`;
     const choice = parseInt(ctx.match[2]);
 
     const chatId = ctx.chat?.id;
@@ -150,6 +150,13 @@ export async function bootstrapApp() {
     }
 
     const state = await getPersistedState(ctx.chat.id);
+
+    const wallet = getWallet(state.delegateKey!);
+    const result = await doVote(wallet, proposalId, choice + 1, state.spaceId!);
+    console.log("delegate addr", wallet.account!.address)
+    console.log("choice", choice, "proposalId", proposalId);
+    ctx.reply(JSON.stringify(result));
+
     state.stage = STAGES.AWAITING_PROPOSALS;
     await persistState(ctx.chat.id, state);
 
@@ -169,8 +176,12 @@ export async function bootstrapApp() {
     state.stage = STAGES.AWAITING_PROPOSALS;
     await persistState(ctx.chat.id, state);
 
-    ctx.answerCbQuery(`Ignoring proposal ${proposalId}`);
-    ctx.editMessageReplyMarkup(Markup.removeKeyboard() as any);
+    try {
+      await ctx.answerCbQuery(`Ignoring proposal ${proposalId}`);
+      await ctx.editMessageReplyMarkup(Markup.removeKeyboard() as any);
+    } catch (e) {
+      console.error(e);
+    }
 
     ctx.reply(
       `<a href="${getProposalURL(

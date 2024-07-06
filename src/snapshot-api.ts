@@ -81,21 +81,20 @@ export const domain = {
   // verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
 } as const
 
-// async function main() {
-//   const signedVote = await vote(client, {
-//     space: 'repr.eth',
-//     proposal: '0x417c92173eaf944719088e113936b2ea1e4ddce3ff1bcf901e55fa32513b2d6f',
-//     type: 'single-choice',
-//     choice: 1,
-//     reason: 'We want them removed!',
-//     app: 'my-app',
-//   });
 
-//   console.log(signedVote);
+export const doVote = async (wallet: WalletClient, proposalId: `0x${string}`, choice: number, space: string) => {
+  const signedVote = await vote(wallet, {
+    space: space,
+    proposal: proposalId,
+    type: 'single-choice',
+    choice: choice,
+    reason: 'Voted from repr.ai',
+    app: 'my-app',
+  });
 
-//   const response = await send(signedVote);
-//   console.log(await response.text());
-// }
+  const response = await send(signedVote);
+  return response.text();
+}
 
 // main()
 //     .then(text => {
