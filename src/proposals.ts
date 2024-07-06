@@ -72,9 +72,14 @@ export function getProposalURL(
 export function getProposalSummary(proposal: Proposal) {
   const url = getProposalURL(proposal, proposal.space.id);
 
+  const choices = '- ' + proposal.choices.join('\n- ');
+
   return `*Proposal:* ${escapeSpecialCharacters(
     proposal.title
-  )}\n[Read more](${url})`;
+  )}\n
+*Full text:* [Read here](${url})\n
+*Options:*
+${escapeSpecialCharacters(choices)}`;
 }
 
 export function prepareProposalPrompt(proposal: Proposal) {
