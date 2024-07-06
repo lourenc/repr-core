@@ -1,0 +1,44 @@
+{
+    "sepolia": {
+        "aiSigToken": "0x0cf7a69BccB73d1197534C5D25e9d2c5341175D0",
+        "sbt": "0x993ecC673DD508fE56a2B2c748c19d2B37966ed4",
+        "erc6551Account": "0xaEFb7997C4795C5AdDa9062c206F1edC84587d0c",
+        "erc6551AccountProxy": "0x51B87DF0aD1655797268d7ad2c7672A850D63609",
+        "gnosisWallet": "0x630D532f92e1D3e258ca55D81E6B42077E1dE548",
+        "aiAccountAddress": "",
+        "multisigOwner": "",
+
+        "tokenId": "0",
+
+        "space": "testoneth.eth",
+        "proposal": "",
+        "choice": "",
+        "reason": "",
+        "timestamp": "",
+
+        "safeTxHash": "",
+
+        "delegateAddress": ""
+    },
+    "polygon": {
+        "aiSigToken": "0x7325A32BE568638E2f743F0d880F6cad0DAFC7E4",
+        "sbt": "0x9f5BA87A7C8765449b4F61b8DdD17483c0F619a4",
+        "erc6551Account": "0x532Efa0115cFC46bF9e2041144663B175FFe7B88",
+        "erc6551AccountProxy": "0xe32B993a31efC0Fd74Dcf94E1E232616538be715",
+        "gnosisWallet": "0xb66F0ee2C41E7eF01Dd61C648e8B08fA870e62f9",
+        "aiAccountAddress": "0x9421d29D2D52662690192d239A1616ca2b08f371",
+        "multisigOwner": "0x11Cb1E53f8695787dDBd3340404b5ca65C9789b5",
+
+        "tokenId": "0",
+
+        "space": "testoneth.eth",
+        "proposal": "0x85a08e6b114b2fc687448add1b7c5833c5b487a40047ebb4c4daf846582e4695",
+        "choice": "1",
+        "reason": "",
+        "timestamp": "1720255458",
+        
+        "safeTxHash": "0xbd6339d55db91fdf6f8bf7bbc1a040754d4ddf55ca31e718b7c456db4125b55b",
+
+        "delegateAddress": "0x9421d29D2D52662690192d239A1616ca2b08f371"
+    }
+}
