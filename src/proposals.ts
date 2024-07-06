@@ -1,6 +1,6 @@
 import { escapeSpecialCharacters } from './helpers';
 
-import { SNAPSHOT_GRAPHQL_URL, SNAPSHOT_URL, TG_BOT_TOKEN } from './config';
+import { SNAPSHOT_GRAPHQL_URL, SNAPSHOT_URL } from './config';
 import { ANSWER_CHOICES, PROPOSAL_INTRO } from './constants';
 
 export interface Proposal {
@@ -58,7 +58,6 @@ export async function fetchProposals(spaces: string[]) {
       },
     }),
   }).then((res) => res.json());
-  console.info('response', response);
 
   return response.data.proposals as Proposal[];
 }

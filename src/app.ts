@@ -21,14 +21,15 @@ import {
   generateProfileSystemPrompt,
   nextUnansweredQuestion,
 } from './profile';
-import { attemptAnswer } from './ai';
-import { doesSpaceExist } from './spaces';
 import {
   fetchProposals,
   getProposalSummary,
   getProposalURL,
   prepareProposalPrompt,
 } from './proposals';
+
+import { attemptAnswer } from './ai';
+import { doesSpaceExist } from './spaces';
 import { pollSubscriptions, saveSubscription } from './subscriptions';
 import { base64ToHex } from './helpers';
 
@@ -48,7 +49,7 @@ export async function bootstrapApp() {
   bot.command('profile', async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
     state.profile = {};
-    state.stage = STAGES.PROFILE_SETUP;
+    state.stage = STAGES.AWAITING_PROFILE_SETUP;
 
     await persistState(ctx.chat.id, state);
 
@@ -57,29 +58,39 @@ export async function bootstrapApp() {
 
   bot.command('space', async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
-    state.stage = STAGES.SPACE_SETUP;
+    state.stage = STAGES.AWAITING_SPACE_SETUP;
 
     await persistState(ctx.chat.id, state);
 
     return ctx.reply('Please, provide the space ID:');
   });
 
-  bot.command("delegate", async (ctx) => {
+  bot.command('delegate', async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
 
     if (!state.delegateKey) {
-      state.delegateKey = generateNewSecretKey();
-      await persistState(ctx.chat.id, state);
+      state.delegateKey = generateNewSecretKey() as `0x${string}`;
+
+      await persistState(ctx.chat.id, {
+        ...state,
+        delegatedAt: Date.now(),
+        stage: STAGES.AWAITING_PROPOSALS,
+      });
+
       ctx.reply('New address created!');
     }
 
     const wallet = getWallet(state.delegateKey);
     const address = wallet.account!.address;
-    return ctx.reply(`Assign delegation rights using link [here](${SNAPSHOT_URL}/#/delegate/${state.spaceId}/${address})`, { parse_mode: 'MarkdownV2' });
+    return ctx.reply(
+      `Assign delegation rights using link [here](${SNAPSHOT_URL}/#/delegate/${state.spaceId}/${address})`,
+      { parse_mode: 'MarkdownV2' }
+    );
   });
 
   bot.command('sumup', async (ctx) => {
     ctx.reply('Summarizing personality');
+
     const state = await getPersistedState(ctx.chat.id);
     const qa = formQaList(state);
 
@@ -129,7 +140,7 @@ export async function bootstrapApp() {
   });
 
   bot.action(/vote-(.+)-(\d)/, async (ctx) => {
-    const proposalId:`0x${string}` = `0x${base64ToHex(ctx.match[1])}`;
+    const proposalId: `0x${string}` = `0x${base64ToHex(ctx.match[1])}`;
     const choice = parseInt(ctx.match[2]);
 
     const chatId = ctx.chat?.id;
@@ -191,7 +202,7 @@ export async function bootstrapApp() {
     const state = await getPersistedState(ctx.chat.id);
 
     switch (state.stage) {
-      case STAGES.PROFILE_SETUP: {
+      case STAGES.AWAITING_PROFILE_SETUP: {
         const unansweredQuestion = nextUnansweredQuestion(state.profile)!;
         const expectedAnswers = QUESTIONS_LIST[unansweredQuestion];
         if (!expectedAnswers.includes(ctx.message.text)) {
@@ -207,7 +218,7 @@ export async function bootstrapApp() {
         await persistState(ctx.chat.id, state);
         return askNextProfileQuestion(ctx, state);
       }
-      case STAGES.SPACE_SETUP: {
+      case STAGES.AWAITING_SPACE_SETUP: {
         const spaceId = ctx.message.text;
         const exists = await doesSpaceExist(spaceId);
 
@@ -215,14 +226,14 @@ export async function bootstrapApp() {
           return ctx.reply('This space does not exist. Please try again');
         } else {
           state.spaceId = spaceId;
-          state.stage = STAGES.SPACE_SETUP_FINISHED;
+          state.stage = STAGES.AWAITING_DELEGATION;
 
           state.knownProposalIds = [];
 
           await saveSubscription(ctx.chat.id, spaceId);
           await persistState(ctx.chat.id, state);
 
-          return ctx.reply('Hooray! Space setup is complete');
+          return ctx.reply('Hooray! Space setup is complete. Now /delegate');
         }
       }
     }
@@ -243,7 +254,7 @@ async function askNextProfileQuestion(ctx: Context, state: ChatState) {
     if (ctx.chat?.id) {
       await persistState(ctx.chat.id, {
         ...state,
-        stage: STAGES.PROFILE_SETUP_FINISHED,
+        stage: STAGES.AWAITING_PROPOSALS,
       });
     }
 

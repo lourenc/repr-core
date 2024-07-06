@@ -9,7 +9,8 @@ export const SNAPSHOT_GRAPHQL_URL =
   process.env.SNAPSHOT_GRAPHQL_URL ||
   'https://testnet.hub.snapshot.org/graphql';
 
-export const SNAPSHOT_SEQ_URL = process.env.SNAPSHOT_SEQ_URL || "https://testnet.seq.snapshot.org"
+export const SNAPSHOT_SEQ_URL =
+  process.env.SNAPSHOT_SEQ_URL || 'https://testnet.seq.snapshot.org';
 
 if (!TG_BOT_TOKEN) {
   throw new Error('TG_BOT_TOKEN is not provided');

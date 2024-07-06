@@ -33,12 +33,14 @@ export async function pollSubscriptions(bot: Telegraf) {
 
       if (
         userState.knownProposalIds.includes(proposal.id) ||
-        userState.stage == STAGES.AWAITING_USER_DECISION
+        userState.stage !== STAGES.AWAITING_PROPOSALS ||
+        !userState.delegatedAt ||
+        userState.delegatedAt > proposal.start * 1000
       ) {
         console.info(
-          `user ${chatId} already knows about proposal ${proposal.id}`
+          `skipping ${proposal.id} for chat ${chatId} because of reasons...`
         );
-        continue; // we don't want to spam the user with the same proposal
+        continue;
       }
 
       const systemPrompt = generateProfileSystemPrompt(userState);
