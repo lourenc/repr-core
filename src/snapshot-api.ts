@@ -93,7 +93,7 @@ export const doVote = async (wallet: WalletClient, proposalId: `0x${string}`, ch
   });
 
   const response = await send(signedVote);
-  return response.text();
+  return response.json();
 }
 
 // main()

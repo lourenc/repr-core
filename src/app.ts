@@ -55,16 +55,6 @@ export async function bootstrapApp() {
     return askNextProfileQuestion(ctx, state);
   });
 
-  bot.command("send", async (ctx) => {
-    const state = await getPersistedState(ctx.chat.id);
-    state.profile = {};
-    state.stage = STAGES.PROFILE_SETUP;
-
-    await persistState(ctx.chat.id, state);
-
-    return askNextProfileQuestion(ctx, state);
-  });
-
   bot.command('space', async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
     state.stage = STAGES.SPACE_SETUP;
@@ -155,7 +145,10 @@ export async function bootstrapApp() {
     const result = await doVote(wallet, proposalId, choice + 1, state.spaceId!);
     console.log("delegate addr", wallet.account!.address)
     console.log("choice", choice, "proposalId", proposalId);
-    ctx.reply(JSON.stringify(result));
+    if (result.error) {
+      return ctx.reply(`Error: ${result.error_description}`);
+    }
+    ctx.reply(`Vote submitted! ✅`);
 
     state.stage = STAGES.AWAITING_PROPOSALS;
     await persistState(ctx.chat.id, state);
