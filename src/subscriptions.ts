@@ -33,7 +33,7 @@ export async function pollSubscriptions(bot: Telegraf) {
 
       if (
         userState.knownProposalIds.includes(proposal.id) ||
-        userState.stage == STAGES.AWAITING_USER_DECISION
+        userState.stage !== STAGES.AWAITING_PROPOSALS
       ) {
         console.info(
           `user ${chatId} already knows about proposal ${proposal.id}`
