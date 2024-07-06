@@ -73,6 +73,7 @@ export async function bootstrapApp() {
 
       await persistState(ctx.chat.id, {
         ...state,
+        delegatedAt: Date.now(),
         stage: STAGES.AWAITING_PROPOSALS,
       });
 

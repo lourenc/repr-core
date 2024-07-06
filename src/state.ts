@@ -15,6 +15,7 @@ export type ChatState = {
   profile: Profile;
   knownProposalIds: string[];
   spaceId?: string;
+  delegatedAt?: number;
   delegateKey?: `0x${string}`;
 };
 
