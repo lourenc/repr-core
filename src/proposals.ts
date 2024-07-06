@@ -63,7 +63,10 @@ export async function fetchProposals(spaces: string[]) {
   return response.data.proposals as Proposal[];
 }
 
-export function getProposalURL(proposal: Proposal, spaceId: string) {
+export function getProposalURL(
+  proposal: Pick<Proposal, 'id'>,
+  spaceId: string
+) {
   return `${SNAPSHOT_URL}/#/${spaceId}/proposal/${proposal.id}`;
 }
 

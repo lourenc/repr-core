@@ -8,7 +8,7 @@ import {
 import { attemptAnswer } from './ai';
 import { getPersistedState, persistState } from './state';
 import { generateProfileSystemPrompt } from './profile';
-import { escapeSpecialCharacters } from './helpers';
+import { escapeSpecialCharacters, hexToBase64 } from './helpers';
 
 export async function pollSubscriptions(bot: Telegraf) {
   const spacesToWatch = await getSpacesToWatch();
@@ -27,7 +27,9 @@ export async function pollSubscriptions(bot: Telegraf) {
 
     for (const chatId of usersSubscribedToSpace) {
       const userState = await getPersistedState(chatId);
+
       console.info(`user ${chatId} state`, userState);
+
       if (userState.knownProposalIds.includes(proposal.id)) {
         console.info(
           `user ${chatId} already knows about proposal ${proposal.id}`
@@ -67,9 +69,12 @@ export async function pollSubscriptions(bot: Telegraf) {
         const inlineKeyboard = Markup.inlineKeyboard([
           Markup.button.callback(
             'Accept & vote',
-            `${proposal.id.substring(2)}`
+            `vote-${hexToBase64(proposal.id.substring(2))}-${choiceIndex}`
           ),
-          Markup.button.callback('Ignore', `${proposal.id.substring(2)}`),
+          Markup.button.callback(
+            'Ignore',
+            `ignore-${hexToBase64(proposal.id.substring(2))}`
+          ),
         ]);
 
         await bot.telegram.sendMessage(

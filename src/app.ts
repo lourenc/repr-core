@@ -26,9 +26,11 @@ import { doesSpaceExist } from './spaces';
 import {
   fetchProposals,
   getProposalSummary,
+  getProposalURL,
   prepareProposalPrompt,
 } from './proposals';
 import { pollSubscriptions, saveSubscription } from './subscriptions';
+import { base64ToHex } from './helpers';
 
 export async function bootstrapApp() {
   const bot = new Telegraf(TG_BOT_TOKEN);
@@ -110,9 +112,36 @@ export async function bootstrapApp() {
     return;
   });
 
-  // bot.action('profile', async (ctx) => {
-  //   ctx.answer;
-  // });
+  bot.action(/vote-(.+)-(\d)/, async (ctx) => {
+    const proposalId = `0x${base64ToHex(ctx.match[1])}`;
+    const choice = parseInt(ctx.match[2]);
+
+    ctx.answerCbQuery(`Voting for proposal ${proposalId}, choice ${choice}`);
+  });
+
+  bot.action(/ignore-(.+)/, async (ctx) => {
+    const proposalId = `0x${base64ToHex(ctx.match[1])}`;
+    const chatId = ctx.chat?.id;
+
+    if (!chatId) {
+      return ctx.answerCbQuery(`Could not find chat ID`);
+    }
+
+    const state = await getPersistedState(ctx.chat.id);
+
+    ctx.answerCbQuery(`Ignoring proposal ${proposalId}`);
+    ctx.editMessageReplyMarkup(Markup.removeKeyboard() as any);
+
+    ctx.reply(
+      `<a href="${getProposalURL(
+        { id: proposalId },
+        state.spaceId!
+      )}">Proposal</a> ignored 💩`,
+      {
+        parse_mode: 'HTML',
+      }
+    );
+  });
 
   bot.on(message('text'), async (ctx) => {
     const state = await getPersistedState(ctx.chat.id);
