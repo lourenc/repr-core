@@ -63,7 +63,7 @@ export async function bootstrapApp() {
 
     await persistState(ctx.chat.id, state);
 
-    return ctx.reply('Please, provide the space ID:');
+    return ctx.reply('Please, provide the space ID: (use "repr.eth" for testing)');
   });
 
   bot.command('reset', async (ctx) => {
@@ -91,7 +91,7 @@ export async function bootstrapApp() {
     const wallet = getWallet(state.delegateKey);
     const address = wallet.account!.address;
     return ctx.reply(
-      `Assign delegation rights using link [here](${SNAPSHOT_URL}/#/delegate/${state.spaceId}/${address})`,
+      `Assign delegation rights using link [here](${SNAPSHOT_URL}/#/delegate/${state.spaceId}/${address}) and wait for new proposals to come in`,
       { parse_mode: 'MarkdownV2' }
     );
   });

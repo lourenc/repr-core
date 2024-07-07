@@ -29,8 +29,6 @@ export async function pollSubscriptions(bot: Telegraf) {
     for (const chatId of usersSubscribedToSpace) {
       const userState = await getPersistedState(chatId);
 
-      console.info(`user ${chatId} state`, userState);
-
       if (
         userState.knownProposalIds.includes(proposal.id) ||
         userState.stage !== STAGES.AWAITING_PROPOSALS ||
