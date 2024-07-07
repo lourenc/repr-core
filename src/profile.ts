@@ -1,4 +1,4 @@
-// import QUESTIONS_LIST from './questions.json';
+import QUESTIONS_LIST from './questions.json';
 
 import { PROPOSAL_SYSTEM_PROMPT } from './constants';
 import { ChatState } from './state';
@@ -6,17 +6,18 @@ import { ChatState } from './state';
 export type Question = string;
 export type Answer = string;
 export type Profile = Record<Question, Answer>;
+export type Notes = string[];
 
-export const QUESTIONS_LIST = {
-  'What is your name?': [
-    'John Doe',
-    'Mark Zuckerberg',
-    'Elon Musk',
-    'Jeff Bezos',
-  ],
-  'How old are you?': ['18', '19', '20', '21', '60+'],
-  'What is your favorite color?': ['Red', 'Blue', 'Green', 'Yellow'],
-};
+// export const QUESTIONS_LIST = {
+//   'What is your name?': [
+//     'John Doe',
+//     'Mark Zuckerberg',
+//     'Elon Musk',
+//     'Jeff Bezos',
+//   ],
+//   'How old are you?': ['18', '19', '20', '21', '60+'],
+//   'What is your favorite color?': ['Red', 'Blue', 'Green', 'Yellow'],
+// };
 
 export function nextUnansweredQuestion(profile: Profile) {
   const unansweredQuestion = Object.keys(QUESTIONS_LIST).find(
@@ -34,9 +35,18 @@ export function formQaList(state: ChatState) {
   return qaList;
 }
 
+export function formNotes(state: ChatState) {
+  let notes = '';
+  for (const note of state.notes) {
+    notes += "Also note: " + note + "\n";
+  }
+  return notes;
+}
+
 export function generateProfileSystemPrompt(state: ChatState) {
   const systemPrompt = PROPOSAL_SYSTEM_PROMPT;
   const qaList = formQaList(state);
-  return systemPrompt + qaList;
+  const notes = formNotes(state);
+  return systemPrompt + qaList + notes;
 }
-// export { QUESTIONS_LIST };
+export { QUESTIONS_LIST };

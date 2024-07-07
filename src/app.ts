@@ -17,6 +17,7 @@ import {
 } from './state';
 import {
   QUESTIONS_LIST,
+  formNotes,
   formQaList,
   generateProfileSystemPrompt,
   nextUnansweredQuestion,
@@ -111,6 +112,9 @@ export async function bootstrapApp() {
     const qa = formQaList(state);
     ctx.reply(qa);
 
+    const notes = formNotes(state);
+    ctx.reply(notes);
+
     ctx.reply(
       state.spaceId
         ? `Currently connected space: ${state.spaceId}`
@@ -192,11 +196,48 @@ export async function bootstrapApp() {
     }
 
     const state = await getPersistedState(ctx.chat.id);
+    state.stage = STAGES.AWAITING_PROPOSALS;
+    await persistState(ctx.chat.id, state);
+
+    try {
+      await ctx.answerCbQuery(`Ignoring proposal ${proposalId}`);
+      await ctx.editMessageReplyMarkup(Markup.removeKeyboard() as any);
+    } catch (e) {
+      console.error(e);
+    }
+
+    ctx.reply(
+      `<a href="${getProposalURL(
+        { id: proposalId },
+        state.spaceId!
+      )}">Proposal</a> ignored 💩`,
+      {
+        parse_mode: 'HTML',
+      }
+    );
+  });
+
+  bot.action(/disagree-(.+)/, async (ctx) => {
+    const proposalId = `0x${base64ToHex(ctx.match[1])}`;
+    const chatId = ctx.chat?.id;
+
+    if (!chatId) {
+      // couldn't happen probably but typescript is not smart enough
+      return ctx.answerCbQuery(`Could not find chat ID`);
+    }
+    const state = await getPersistedState(ctx.chat.id);
+
+    // remove proposal from known list
+    const index = state.knownProposalIds.indexOf(proposalId);
+    if (index > -1) {
+      state.knownProposalIds.splice(index, 1);
+    }
+    
     state.stage = STAGES.AWAITING_COMMENTARY;
     await persistState(ctx.chat.id, state);
 
     try {
-      await ctx.answerCbQuery(`Dismissing proposal ${proposalId}`);
+      await ctx.answerCbQuery(`Dismissing proposal`);
       await ctx.editMessageReplyMarkup(Markup.removeKeyboard() as any);
     } catch (e) {
       console.error(e);
@@ -244,11 +285,11 @@ export async function bootstrapApp() {
         }
       }
       case STAGES.AWAITING_COMMENTARY: {
-        state.profile["Also note: "] = ctx.message.text;
+        state.notes.push(ctx.message.text);
         state.stage = STAGES.AWAITING_PROPOSALS;
         await persistState(ctx.chat.id, state);
 
-        return ctx.reply("I'll take that into consideration");
+        return ctx.reply("I'll take that into consideration and try again");
       }
     }
   });

@@ -15,6 +15,7 @@ export type ChatState = {
   stage: keyof typeof STAGES;
   profile: Profile;
   knownProposalIds: string[];
+  notes: string[];
   spaceId?: string;
   delegatedAt?: number;
   delegateKey?: `0x${string}`;
@@ -26,6 +27,7 @@ export function createInitialChatState() {
     stage: STAGES.WELCOME,
     profile: {},
     knownProposalIds: [],
+    notes: [],
   } as ChatState;
 }
 
