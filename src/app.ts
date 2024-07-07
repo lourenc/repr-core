@@ -232,7 +232,7 @@ export async function bootstrapApp() {
     if (index > -1) {
       state.knownProposalIds.splice(index, 1);
     }
-    
+
     state.stage = STAGES.AWAITING_COMMENTARY;
     await persistState(ctx.chat.id, state);
 
@@ -243,7 +243,9 @@ export async function bootstrapApp() {
       console.error(e);
     }
 
-    ctx.reply("Why you don't agree?");
+    ctx.reply(
+      "Please, provide your commentary on why you're declining the suggested choice"
+    );
   });
 
   bot.on(message('text'), async (ctx) => {
