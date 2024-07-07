@@ -6,6 +6,7 @@ import { ChatState } from './state';
 export type Question = string;
 export type Answer = string;
 export type Profile = Record<Question, Answer>;
+export type Notes = string[];
 
 // export const QUESTIONS_LIST = {
 //   'What is your name?': [
@@ -34,9 +35,18 @@ export function formQaList(state: ChatState) {
   return qaList.replaceAll(/\(\d+\/\d+\)/g, '').trim();
 }
 
+export function formNotes(state: ChatState) {
+  let notes = '';
+  for (const note of state.notes) {
+    notes += "Also note: " + note + "\n";
+  }
+  return notes;
+}
+
 export function generateProfileSystemPrompt(state: ChatState) {
   const systemPrompt = PROPOSAL_SYSTEM_PROMPT;
   const qaList = formQaList(state);
-  return systemPrompt + qaList;
+  const notes = formNotes(state);
+  return systemPrompt + qaList + notes;
 }
 export { QUESTIONS_LIST };

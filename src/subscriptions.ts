@@ -105,6 +105,10 @@ export async function pollSubscriptions(bot: Telegraf) {
             `vote-${hexToBase64(proposal.id.substring(2))}-${choiceIndex}`
           ),
           Markup.button.callback(
+            'Disagree',
+            `disagree-${hexToBase64(proposal.id.substring(2))}`
+          ),
+          Markup.button.callback(
             'Ignore',
             `ignore-${hexToBase64(proposal.id.substring(2))}`
           ),

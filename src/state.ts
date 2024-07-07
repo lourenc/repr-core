@@ -7,6 +7,7 @@ export const STAGES = {
   AWAITING_SPACE_SETUP: 'AWAITING_SPACE_SETUP',
   AWAITING_DELEGATION: 'AWAITING_DELEGATION',
   AWAITING_PROPOSALS: 'AWAITING_PROPOSALS',
+  AWAITING_COMMENTARY: 'AWAITING_COMMENTARY',
   AWAITING_USER_DECISION: 'AWAITING_USER_DECISION',
 } as const;
 
@@ -14,6 +15,7 @@ export type ChatState = {
   stage: keyof typeof STAGES;
   profile: Profile;
   knownProposalIds: string[];
+  notes: string[];
   spaceId?: string;
   delegatedAt?: number;
   delegateKey?: `0x${string}`;
@@ -25,6 +27,7 @@ export function createInitialChatState() {
     stage: STAGES.WELCOME,
     profile: {},
     knownProposalIds: [],
+    notes: [],
   } as ChatState;
 }
 
