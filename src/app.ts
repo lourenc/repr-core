@@ -91,7 +91,7 @@ export async function bootstrapApp() {
     const wallet = getWallet(state.delegateKey);
     const address = wallet.account!.address;
     return ctx.reply(
-      `Assign delegation rights using link [here](${SNAPSHOT_URL}/#/delegate/${state.spaceId}/${address}) and wait for new proposals to come in`,
+      `Assign delegation rights using link [here](${SNAPSHOT_URL}/#/delegate/${state.spaceId}/${address}) and wait for new proposals to come in\\. \\(ask @conscio to create a sample ones\\)`,
       { parse_mode: 'MarkdownV2' }
     );
   });
