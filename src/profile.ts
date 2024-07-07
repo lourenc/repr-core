@@ -32,7 +32,7 @@ export function formQaList(state: ChatState) {
   for (const [que, ans] of Object.entries(state.profile)) {
     qaList += `${que} ${ans}\n`;
   }
-  return qaList;
+  return qaList.replaceAll(/\(\d+\/\d+\)/g, '').trim();
 }
 
 export function formNotes(state: ChatState) {
