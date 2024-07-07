@@ -192,25 +192,17 @@ export async function bootstrapApp() {
     }
 
     const state = await getPersistedState(ctx.chat.id);
-    state.stage = STAGES.AWAITING_PROPOSALS;
+    state.stage = STAGES.AWAITING_COMMENTARY;
     await persistState(ctx.chat.id, state);
 
     try {
-      await ctx.answerCbQuery(`Ignoring proposal ${proposalId}`);
+      await ctx.answerCbQuery(`Dismissing proposal ${proposalId}`);
       await ctx.editMessageReplyMarkup(Markup.removeKeyboard() as any);
     } catch (e) {
       console.error(e);
     }
 
-    ctx.reply(
-      `<a href="${getProposalURL(
-        { id: proposalId },
-        state.spaceId!
-      )}">Proposal</a> ignored 💩`,
-      {
-        parse_mode: 'HTML',
-      }
-    );
+    ctx.reply("Why you don't agree?");
   });
 
   bot.on(message('text'), async (ctx) => {
@@ -250,6 +242,13 @@ export async function bootstrapApp() {
 
           return ctx.reply('Hooray! Space setup is complete. Now /delegate');
         }
+      }
+      case STAGES.AWAITING_COMMENTARY: {
+        state.profile["Also note: "] = ctx.message.text;
+        state.stage = STAGES.AWAITING_PROPOSALS;
+        await persistState(ctx.chat.id, state);
+
+        return ctx.reply("I'll take that into consideration");
       }
     }
   });
