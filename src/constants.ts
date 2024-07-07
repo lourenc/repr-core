@@ -10,7 +10,7 @@ Please setup your profile now.
 Type /profile to get started.`;
 
 export const PROFILE_SETUP_COMPLETE_MESSAGE =
-  'Your profile is already setup ✨ You can now indicate DAO Snapshot space name by sending /space command';
+  'Profile setup complete ✨ You can now indicate DAO Snapshot space name by sending /space command';
 
 export const PROPOSAL_SYSTEM_PROMPT = `Study the provided "user profile" and the "proposal", then suggest a most suitable answer that aligns with user values mentioned. Strictly follow a answer template and answering rules mentioned below.
 
